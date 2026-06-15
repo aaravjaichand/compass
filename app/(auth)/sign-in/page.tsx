@@ -17,14 +17,19 @@ export default function SignInPage() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error } = await authClient.signIn.email({ email, password });
-    if (error) {
-      setError(error.message ?? "Couldn't sign in. Check your details.");
+    try {
+      const { error } = await authClient.signIn.email({ email, password });
+      if (error) {
+        setError(error.message || "Invalid email or password.");
+        setBusy(false);
+        return;
+      }
+      // Hard navigation so server components pick up the new session cookie.
+      window.location.assign("/dashboard");
+    } catch {
+      setError("Invalid email or password.");
       setBusy(false);
-      return;
     }
-    // Hard navigation so server components pick up the new session cookie.
-    window.location.assign("/dashboard");
   }
 
   return (

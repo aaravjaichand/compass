@@ -23,38 +23,52 @@ export default function SignUpPage() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error } = await authClient.signUp.email({ email, name, password });
-    setBusy(false);
-    if (error) {
-      setError(error.message ?? "Couldn't create your account.");
-      return;
+    try {
+      const { error } = await authClient.signUp.email({ email, name, password });
+      setBusy(false);
+      if (error) {
+        setError(error.message || "Couldn't create your account.");
+        return;
+      }
+      // Neon emails a verification code; collect it next.
+      setStep("verify");
+    } catch {
+      setBusy(false);
+      setError("Couldn't create your account. Try a different email.");
     }
-    // Neon emails a verification code; collect it next.
-    setStep("verify");
   }
 
   async function submitOtp(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error } = await authClient.emailOtp.verifyEmail({ email, otp });
-    if (error) {
-      setError(error.message ?? "That code didn't work. Try again.");
+    try {
+      const { error } = await authClient.emailOtp.verifyEmail({ email, otp });
+      if (error) {
+        setError(error.message || "That code didn't work. Try again.");
+        setBusy(false);
+        return;
+      }
+      window.location.assign("/onboarding");
+    } catch {
+      setError("That code didn't work. Try again.");
       setBusy(false);
-      return;
     }
-    window.location.assign("/onboarding");
   }
 
   async function resend() {
     setResent(false);
     setError(null);
-    const { error } = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "email-verification",
-    });
-    if (error) setError(error.message ?? "Couldn't resend the code.");
-    else setResent(true);
+    try {
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email,
+        type: "email-verification",
+      });
+      if (error) setError(error.message || "Couldn't resend the code.");
+      else setResent(true);
+    } catch {
+      setError("Couldn't resend the code.");
+    }
   }
 
   return (
