@@ -2,7 +2,7 @@ import { StatusDot } from "@/components/ui/StatusDot";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-border print:hidden">
+    <footer className="mt-auto border-t border-border">
       <div className="mx-auto max-w-[1140px] px-6 py-8 text-sm text-muted">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <StatusDot tone="danger" />

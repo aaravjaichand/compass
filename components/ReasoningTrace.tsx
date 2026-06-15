@@ -59,7 +59,7 @@ export function ReasoningTrace({ parts }: { parts: TracePart[] }) {
   if (steps.length === 0) return null;
 
   return (
-    <Card className="bg-surface-2">
+    <Card className="bg-surface-2 print:hidden">
       <p className="font-mono text-xs tracking-wide text-subtle">
         HOW COMPASS WORKED
       </p>
