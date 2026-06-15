@@ -170,6 +170,15 @@ function AccountSection({
   const [next, setNext] = useState("");
   const [busy, setBusy] = useState(false);
 
+  async function signOut() {
+    try {
+      await authClient.signOut();
+    } catch {
+      /* fall through to redirect regardless */
+    }
+    window.location.assign("/");
+  }
+
   async function changePassword(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -194,9 +203,14 @@ function AccountSection({
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-2">
-        <h2 className="text-base font-medium">Email</h2>
-        <p className="font-mono text-sm text-muted">{email}</p>
+      <Card className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-2">
+          <h2 className="text-base font-medium">Email</h2>
+          <p className="font-mono text-sm text-muted">{email}</p>
+        </div>
+        <Button variant="secondary" onClick={signOut}>
+          Sign out
+        </Button>
       </Card>
 
       <Card className="space-y-4">
