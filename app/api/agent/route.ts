@@ -11,7 +11,7 @@ import { SYSTEM_PROMPT } from "@/lib/agent/prompt";
 import { ALLOWED_TOOLS, DISALLOWED_TOOLS, compassServer } from "@/lib/agent/tools";
 import { buildPrompt, runAgentStream, todayInET } from "@/lib/agent/stream";
 import { rateLimit } from "@/lib/rate-limit";
-import { stackServerApp } from "@/stack/server";
+import { getCurrentUser } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     });
   }
 
-  const user = await stackServerApp.getUser();
+  const user = await getCurrentUser();
   if (!user) {
     return new Response("Unauthorized", { status: 401 });
   }

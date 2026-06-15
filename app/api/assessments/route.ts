@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { stackServerApp } from "@/stack/server";
+import { getCurrentUser } from "@/lib/auth/server";
 import { saveAssessmentSnapshot } from "@/lib/db/queries";
 import { actionPlanSchema } from "@/lib/agent/schema";
 
@@ -20,7 +20,7 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const user = await stackServerApp.getUser();
+  const user = await getCurrentUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
 
   let json: unknown;
