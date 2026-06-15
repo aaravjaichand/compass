@@ -12,39 +12,40 @@
       "Medically-necessary cooling assistance"
     ],
     "eligibility": {
-      "summary": "Low-to-moderate income NJ households; you do not need to be behind on the bill to apply.",
-      "income": "Household income at or below ~60% of state median income (about $5,800/mo for a family of 3).",
-      "residency": "New Jersey resident; responsible for home heating/cooling costs.",
-      "household": "All household sizes; benefit scales with size.",
-      "notes": "Renters whose utilities are included in rent may still qualify. Immigration status of the applicant's children does not affect a citizen child's eligibility."
+      "summary": "Low-to-moderate income NJ households; you don't need to be behind on the bill to apply, and enrolling can protect you from a winter shutoff.",
+      "income": "At or below 60% of state median income (FFY2026: about $6,732/mo for a household of 3, $8,014/mo for 4). USF also considers whether your energy bills are a high share of your income.",
+      "residency": "New Jersey resident responsible for your home heating or cooling costs.",
+      "household": "All household sizes; the income limit and benefit rise with household size.",
+      "notes": "Renters whose utilities are included in rent may still qualify. A citizen child's eligibility isn't affected by a parent's immigration status. Enrolling can trigger Winter Termination Program protection (no shutoff Nov 15–Mar 15)."
     },
     "requiredDocs": [
       "Photo ID for the applicant",
-      "Most recent electric and gas bills",
-      "Proof of income for the last 4 weeks (pay stubs, benefit letters)",
-      "Proof of address (lease or recent mail)",
-      "Social Security numbers or ITINs for household members who have them"
+      "Social Security cards for everyone in the household (birth certificate for infants under 12 months)",
+      "Proof of income for the last 4 weeks (pay stubs, or SSA/SSI/pension award letters); a Zero-Income Statement for any adult with no income",
+      "Proof you're responsible for the home: a current lease, or a mortgage or property-tax bill",
+      "All pages of your most recent gas and electric bills",
+      "Proof of U.S. citizenship or legal residency"
     ],
     "location": {
-      "address": "Apply online via DCAid; in-person help at Hudson County Community Action",
-      "city": "Statewide / Jersey City",
+      "address": "Apply online at dcaid.dca.nj.gov; Hudson County in-person help at PACO, 390 Manila Ave",
+      "city": "Jersey City",
       "county": "Hudson",
       "zip": "07302"
     },
-    "hours": "Online 24/7; phone Mon–Fri 8:30am–4:30pm",
+    "hours": "Online 24/7; statewide line Mon–Fri 8:30am–4:30pm",
     "contact": {
       "phone": "1-800-510-3102",
       "url": "https://dcaid.dca.nj.gov",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on NJ LIHEAP/USF public program info",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "NJ DCA Division of Housing & Community Resources — FFY2026 USF/HEA factsheet and LIHEAP/USF application (nj.gov/dca/dhcr); local agency PACO. Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "hudson-bsds-snap",
     "name": "SNAP (Food Assistance / NJ SNAP)",
-    "org": "Hudson County Board of Social Services",
+    "org": "Hudson County Dept. of Family Services / Welfare Division",
     "category": ["food", "cash"],
     "summary": "Monthly money on a card to buy groceries. The amount depends on your household size and income, and benefits can start within days in an emergency.",
     "services": [
@@ -54,17 +55,18 @@
     ],
     "eligibility": {
       "summary": "Low-income households; most families with reduced hours or recent job loss qualify.",
-      "income": "Gross monthly income at or below 185% of the federal poverty level (about $4,000/mo for a family of 3).",
+      "income": "Gross monthly income at or below 185% of the federal poverty level (Oct 2025–Sep 2026: about $4,109/mo for a household of 3, $4,957/mo for 4). Households with a member 60+ or who is disabled are exempt from the gross-income test.",
       "residency": "Must live in Hudson County, NJ.",
-      "household": "Counts everyone who buys and prepares food together.",
+      "household": "Counts everyone who lives and eats together.",
       "notes": "A U.S.-born or qualified-immigrant child can receive SNAP even if a parent is ineligible."
     },
     "requiredDocs": [
-      "Photo ID",
+      "Valid photo ID",
+      "Social Security number for each person applying",
+      "Proof of immigration status (for household members who aren't U.S. citizens)",
       "Proof of income for the last 30 days (or proof of job loss / reduced hours)",
-      "Proof of Hudson County address",
-      "Social Security numbers for members applying",
-      "Recent rent and utility bills (for the deduction that can raise your benefit)"
+      "Proof of resources, such as recent bank statements",
+      "Proof of Hudson County residence (a lease or utility bill)"
     ],
     "location": {
       "address": "257 Cornelison Ave",
@@ -72,20 +74,20 @@
       "county": "Hudson",
       "zip": "07302"
     },
-    "hours": "Mon–Fri 8:00am–4:00pm; apply online anytime",
+    "hours": "Mon–Fri 8:30am–4:15pm; apply online anytime",
     "contact": {
       "phone": "201-420-3000",
-      "url": "https://www.njhelps.org",
+      "url": "https://www.mynjhelps.gov",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on NJ SNAP public program info",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "NJ DHS Division of Family Development — NJ SNAP (nj.gov/humanservices/njsnap); Hudson County Dept. of Family Services. Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "hudson-wic",
     "name": "WIC (Women, Infants & Children Nutrition)",
-    "org": "Hudson County WIC Program",
+    "org": "City of Jersey City Dept. of Health & Human Services — WIC",
     "category": ["food", "health"],
     "summary": "Free healthy food, formula, and nutrition support for pregnant people and kids under 5. Marisol's 5-year-old may still qualify until their 5th birthday.",
     "services": [
@@ -95,73 +97,74 @@
     ],
     "eligibility": {
       "summary": "Pregnant, postpartum, or breastfeeding people and children under age 5 with low-to-moderate income.",
-      "income": "Household income at or below 185% of the federal poverty level; being on SNAP or Medicaid qualifies you automatically.",
+      "income": "At or below 185% of the federal poverty level (eff. June 2026: about $4,212/mo for a household of 3, $5,088/mo for 4). Being on SNAP, Medicaid, or TANF qualifies you automatically.",
       "residency": "New Jersey resident.",
       "household": "Each eligible child and parent counts.",
       "notes": "Open to families regardless of immigration status; using WIC does not affect immigration cases."
     },
     "requiredDocs": [
-      "Photo ID for the parent/guardian",
-      "The child's birth certificate or medical record",
-      "Proof of income or a SNAP/Medicaid eligibility letter",
-      "Proof of NJ address"
+      "Photo ID for the parent or guardian (and each applicant)",
+      "Proof of NJ residency (license, lease, or two pieces of recent mail)",
+      "Proof of income, OR a SNAP / Medicaid / TANF eligibility letter",
+      "The child's immunization records",
+      "Proof of pregnancy, if applying while pregnant"
     ],
     "location": {
-      "address": "395 Martin Luther King Dr",
+      "address": "1 Jackson Square",
       "city": "Jersey City",
       "county": "Hudson",
       "zip": "07305"
     },
-    "hours": "Mon–Fri 8:30am–4:30pm",
+    "hours": "Mon–Fri 7:30am–4:00pm (plus some Saturdays)",
     "contact": {
-      "phone": "201-435-7060",
+      "phone": "201-547-6842",
       "url": "https://www.nj.gov/health/fhs/wic",
+      "email": "wichelp@jcnj.org",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on NJ WIC public program info",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "NJ Dept. of Health WIC (nj.gov/health/fhs/wic); City of Jersey City DHHS WIC clinic. Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
-    "id": "york-street-pantry",
-    "name": "York Street Project Food Pantry",
-    "org": "York Street Project",
+    "id": "triangle-park-pantry",
+    "name": "Triangle Park Community Center Food Pantry",
+    "org": "Triangle Park Community Center",
     "category": ["food"],
-    "summary": "A neighborhood food pantry where you can pick up free groceries the same day, no appointment needed. Good for filling the fridge this week while longer applications process.",
+    "summary": "A neighborhood food pantry where you can pick up free groceries — no appointment and no income paperwork needed. Good for filling the fridge while longer applications process.",
     "services": [
       "Free groceries and shelf-stable food",
       "Fresh produce when available",
-      "Referrals to other local help"
+      "Open to the community, no registration required"
     ],
     "eligibility": {
-      "summary": "Open to anyone in need in the Jersey City area; no income paperwork required to receive food.",
-      "residency": "Walk-ins welcome; serves Hudson County residents.",
-      "notes": "No ID or immigration status required to receive groceries."
+      "summary": "Open to anyone in need in the Jersey City area; no income or residency paperwork required to receive food.",
+      "residency": "Walk-ins welcome.",
+      "notes": "No ID or immigration status required to receive groceries; bringing a photo ID and your own bags is helpful."
     },
     "requiredDocs": [
       "None required to receive food",
-      "Proof of address helpful but optional"
+      "A photo ID and your own bags are helpful but optional"
     ],
     "location": {
-      "address": "89 York St",
+      "address": "247 Old Bergen Road",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07302"
+      "zip": "07305"
     },
-    "hours": "Tue & Thu 10:00am–1:00pm",
+    "hours": "3rd Saturday of each month, 10:00am–12:00pm",
     "contact": {
-      "phone": "201-451-9838",
-      "url": "https://yorkstreetproject.org",
-      "languages": ["English", "Spanish"]
+      "phone": "201-994-4302",
+      "url": "https://www.triangleparkcc.org/food-pantry"
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on a Jersey City food pantry",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "Triangle Park Community Center (triangleparkcc.org); City of Jersey City certified food-pantry list. Verified Jun 2026 — confirm hours by phone.",
+    "isSynthetic": false
   },
   {
     "id": "njsharestop-utility",
     "name": "NJ SHARES Emergency Utility Grant",
-    "org": "New Jersey SHARES",
+    "org": "New Jersey SHARES (SHARES Nation)",
     "category": ["utility"],
     "summary": "A one-time grant to help households that are slightly over the income limit for LIHEAP but still can't cover an electric or gas bill and face a shutoff.",
     "services": [
@@ -169,37 +172,38 @@
       "Help for households just above other program limits"
     ],
     "eligibility": {
-      "summary": "Households experiencing a temporary financial hardship who have made a good-faith payment effort.",
-      "income": "Generally for low-to-moderate income households above the LIHEAP cutoff.",
-      "residency": "New Jersey resident with a utility account in their name.",
-      "notes": "Usually requires a recent payment toward the balance."
+      "summary": "For households in a temporary energy crisis whose income is just above the LIHEAP/USF limit.",
+      "income": "Income above the LIHEAP/USF limit but not over 400% of the federal poverty level; you can't have received LIHEAP this program year.",
+      "residency": "New Jersey resident with a residential utility account in your name.",
+      "notes": "You must have made a good-faith payment of at least $100 in the last 90 days, and apply to LIHEAP and USF first. Grants (up to $700) are paid directly to the utility."
     },
     "requiredDocs": [
-      "Photo ID",
-      "The overdue utility bill or shutoff notice",
-      "Proof of income",
-      "Proof of a recent payment toward the bill"
+      "Photo ID for the applicant and all household members",
+      "Proof of residency",
+      "Proof of income for the last 4 consecutive weeks (or a zero-income statement)",
+      "Your most recent energy bill",
+      "Your LIHEAP and USF determination letters",
+      "Proof of a good-faith payment of at least $100 in the last 90 days"
     ],
     "location": {
-      "address": "Phone and online intake",
+      "address": "Phone and online intake; 200+ partner agencies statewide",
       "city": "Statewide",
-      "county": "Hudson",
-      "zip": "07302"
+      "county": "Hudson"
     },
     "hours": "Mon–Fri 9:00am–5:00pm",
     "contact": {
       "phone": "1-866-657-4273",
-      "url": "https://www.njshares.org",
+      "url": "https://sharesnation.org",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on NJ SHARES public program info",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "New Jersey SHARES energy assistance guidelines (sharesnation.org). Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "hudson-tanf-wfnj",
     "name": "WorkFirst NJ / TANF (Temporary Cash Assistance)",
-    "org": "Hudson County Board of Social Services",
+    "org": "Hudson County Dept. of Family Services / Welfare Division",
     "category": ["cash"],
     "summary": "Short-term monthly cash for families with children who have little or no income, plus help finding work and emergency assistance for rent or utilities.",
     "services": [
@@ -209,10 +213,10 @@
     ],
     "eligibility": {
       "summary": "Families with children and very low income and resources.",
-      "income": "Very low income; specific limits depend on household size.",
-      "residency": "Hudson County resident.",
+      "income": "Very low income (monthly limit about $839 for a household of 3, rising with size); resources at or below $2,000.",
+      "residency": "Hudson County resident; U.S. citizen or qualified non-citizen.",
       "household": "Must include a dependent child.",
-      "notes": "Time-limited; comes with work requirements once stabilized."
+      "notes": "Time-limited; comes with work requirements once stabilized. The local office also offers Emergency Assistance for rent or utility crises."
     },
     "requiredDocs": [
       "Photo ID",
@@ -227,20 +231,20 @@
       "county": "Hudson",
       "zip": "07302"
     },
-    "hours": "Mon–Fri 8:00am–4:00pm",
+    "hours": "Mon–Fri 8:30am–4:15pm",
     "contact": {
       "phone": "201-420-3000",
-      "url": "https://www.njhelps.org",
-      "languages": ["English", "Spanish"]
+      "url": "https://www.mynjhelps.gov",
+      "languages": ["English", "Spanish", "Arabic", "Chinese", "Hindi", "Portuguese"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on WorkFirst NJ public program info",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "NJ DHS WorkFirst NJ (nj.gov/humanservices/wfnj); Hudson County Dept. of Family Services. Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "nj-childcare-subsidy",
-    "name": "NJ Child Care Subsidy",
-    "org": "NJ Division of Family Development / Hudson County",
+    "name": "Child Care Assistance Program (Child Care Subsidy)",
+    "org": "NJ Division of Family Development; Hudson CCR&R: Urban League of Hudson County",
     "category": ["childcare"],
     "summary": "Helps working or job-searching parents pay for child care so they can keep or look for a job. Covers part of the cost at approved providers.",
     "services": [
@@ -249,71 +253,71 @@
     ],
     "eligibility": {
       "summary": "Working or job-searching parents with low-to-moderate income and children under 13.",
-      "income": "At or below 200% of the federal poverty level at application.",
+      "income": "At or below 250% of the federal poverty level to start, with a one-year phase-out up to 85% of state median income; priority for families at or below 100% of poverty.",
       "residency": "New Jersey resident.",
-      "household": "Children under 13 (or older with special needs).",
-      "notes": "A recent job loss with active job search can still qualify you."
+      "household": "Children from birth through age 13 (up to 19 with special needs).",
+      "notes": "A recent job loss with an active job search can still qualify you. Enrollment reopened in 2026 with a statewide cap, so apply early."
     },
     "requiredDocs": [
       "Photo ID",
-      "Children's birth certificates",
-      "Proof of income or job-search activity",
+      "Children's birth certificates or proof of age",
+      "Proof of income",
+      "Proof you need care (work, school, or training)",
       "Proof of NJ address"
     ],
     "location": {
-      "address": "Hudson County one-stop intake",
+      "address": "Urban League of Hudson County, 253 Martin Luther King Jr. Dr",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07306"
+      "zip": "07305"
     },
     "hours": "Mon–Fri 8:30am–4:30pm",
     "contact": {
-      "phone": "1-800-332-9227",
+      "phone": "201-451-8888",
       "url": "https://www.childcarenj.gov",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on NJ Child Care Subsidy public info",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "NJ DHS Division of Family Development — CCAP (childcarenj.gov); Urban League of Hudson County (CCR&R). Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "hudson-emergency-rental",
-    "name": "Emergency Rental & Eviction Prevention Assistance",
-    "org": "Hudson County Housing Resource Center",
+    "name": "Emergency Assistance — Rent & Eviction Prevention",
+    "org": "North Hudson Community Action Corp (NHCAC)",
     "category": ["housing"],
-    "summary": "Help for renters at risk of falling behind or facing eviction — short-term rental help and connection to legal and housing counseling.",
+    "summary": "Short-term help for Hudson County renters at risk of eviction — emergency aid and connection to rental assistance and housing counseling.",
     "services": [
-      "Short-term rental assistance",
-      "Help negotiating with a landlord",
-      "Referrals to eviction-defense legal aid"
+      "Short-term emergency aid to prevent eviction",
+      "Help understanding your options",
+      "Referrals to rental assistance and legal aid"
     ],
     "eligibility": {
-      "summary": "Renters with low income who are behind or at risk of falling behind on rent.",
-      "income": "Low-to-moderate income; priority for households facing imminent loss of housing.",
-      "residency": "Hudson County renter.",
-      "notes": "Not a legal determination — staff help you understand options, not decide your case."
+      "summary": "Low-income Hudson County residents at risk of losing their housing.",
+      "income": "Low income; exact limits vary by program — call to confirm.",
+      "residency": "Hudson County resident.",
+      "notes": "Not a legal determination — staff help you understand options. Exact eligibility and documents vary, so call before you go."
     },
     "requiredDocs": [
       "Photo ID",
       "Current lease",
       "Any late-rent or eviction notice received",
-      "Proof of income and the hardship (e.g., reduced hours letter)"
+      "Proof of income and of the hardship (e.g., a reduced-hours letter)"
     ],
     "location": {
-      "address": "830 Bergen Ave",
-      "city": "Jersey City",
-      "county": "Hudson",
-      "zip": "07306"
+      "address": "Call for the office nearest you",
+      "city": "Union City",
+      "county": "Hudson"
     },
     "hours": "Mon–Fri 9:00am–5:00pm",
     "contact": {
-      "phone": "201-369-4500",
-      "url": "https://www.hudsoncountynj.org",
-      "languages": ["English", "Spanish"]
+      "phone": "201-210-0200",
+      "url": "https://nhcac.org/services/social-services/emergency-assistance-department/",
+      "languages": ["English", "Spanish", "Arabic", "Chinese", "Filipino", "Hindi"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on county housing assistance",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "North Hudson Community Action Corp — Emergency Assistance Dept (nhcac.org). Verified Jun 2026; confirm eligibility and documents by phone.",
+    "isSynthetic": false
   },
   {
     "id": "northeast-legal-services",
@@ -327,9 +331,9 @@
       "Appeals when a benefit is wrongly denied"
     ],
     "eligibility": {
-      "summary": "Low-income residents of Hudson, Bergen, Essex, or Hudson-area counties.",
+      "summary": "Low-income residents of Hudson, Bergen, and Passaic counties.",
       "income": "Generally at or below 200% of the federal poverty level.",
-      "residency": "Serves northeastern NJ counties including Hudson and Bergen.",
+      "residency": "Serves Hudson, Bergen, and Passaic counties.",
       "notes": "Provides legal advice and representation — Compass does not."
     },
     "requiredDocs": [
@@ -346,12 +350,12 @@
     "hours": "Mon–Fri 9:00am–5:00pm",
     "contact": {
       "phone": "201-792-6363",
-      "url": "https://www.lsnj.org",
+      "url": "https://www.nnjls.org",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on Legal Services of NJ",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "Northeast New Jersey Legal Services (nnjls.org), part of the LSNJ network; statewide hotline 1-888-576-5529. Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "988-lifeline",
@@ -366,7 +370,7 @@
     ],
     "eligibility": {
       "summary": "Anyone, any time. No eligibility requirements.",
-      "notes": "If someone is in immediate danger, call 911."
+      "notes": "If someone is in immediate danger, call 911. For Spanish, press 2 when you call, or text AYUDA."
     },
     "requiredDocs": ["None"],
     "location": {
@@ -380,9 +384,9 @@
       "url": "https://988lifeline.org",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on the 988 Lifeline",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "988 Suicide & Crisis Lifeline (988lifeline.org) and SAMHSA. Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "bergen-bss-snap",
@@ -397,7 +401,7 @@
     ],
     "eligibility": {
       "summary": "Low-income Bergen County residents.",
-      "income": "Gross income at or below 185% of the federal poverty level for SNAP.",
+      "income": "Gross monthly income at or below 185% of the federal poverty level (Oct 2025–Sep 2026: about $4,109/mo for a household of 3, $4,957/mo for 4).",
       "residency": "Must live in Bergen County, NJ.",
       "notes": "Apply here only if you live in Bergen County; Hudson residents use the Hudson office."
     },
@@ -408,7 +412,7 @@
       "Social Security numbers for applicants"
     ],
     "location": {
-      "address": "216 Route 17 North",
+      "address": "218 Route 17 North",
       "city": "Rochelle Park",
       "county": "Bergen",
       "zip": "07662"
@@ -416,12 +420,12 @@
     "hours": "Mon–Fri 8:00am–4:00pm",
     "contact": {
       "phone": "201-368-4200",
-      "url": "https://www.co.bergen.nj.us/board-of-social-services",
+      "url": "https://www.bcbss.com",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on Bergen County BSS public info",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "Bergen County Board of Social Services (bcbss.com); NJ SNAP FFY2026 income limits. Verified Jun 2026.",
+    "isSynthetic": false
   },
   {
     "id": "center-for-food-action",
@@ -435,28 +439,28 @@
       "Holiday and school-supply support"
     ],
     "eligibility": {
-      "summary": "Bergen County residents experiencing a food or financial emergency.",
-      "residency": "Serves Bergen County and nearby towns.",
-      "notes": "No immigration status required for food assistance."
+      "summary": "Bergen County (and northern Passaic) residents in a food or financial emergency.",
+      "residency": "Serves Bergen County and northern Passaic; cannot serve Paterson or Passaic city.",
+      "notes": "Register at the pantry or by phone. Income limits aren't published — anyone in the service area who is in need can get food."
     },
     "requiredDocs": [
-      "Proof of address for food help",
-      "For rent/utility help: the bill or notice and proof of income"
+      "A photo ID and proof of address are helpful",
+      "For rent or utility help: the bill or notice and proof of income"
     ],
     "location": {
-      "address": "192 W Demarest Ave",
+      "address": "192 West Demarest Ave",
       "city": "Englewood",
       "county": "Bergen",
       "zip": "07631"
     },
-    "hours": "Mon–Fri 9:00am–4:00pm",
+    "hours": "Office Mon–Fri 8:30am–4:30pm; food distribution Mon–Fri 10:00–11:30am",
     "contact": {
       "phone": "201-569-1804",
       "url": "https://cfanj.org",
       "languages": ["English", "Spanish"]
     },
-    "lastUpdated": "2026-05",
-    "source": "Synthetic record modeled on a Bergen County food agency",
-    "isSynthetic": true
+    "lastUpdated": "2026-06",
+    "source": "Center for Food Action (cfanj.org). Verified Jun 2026.",
+    "isSynthetic": false
   }
 ]

@@ -23,8 +23,8 @@ describe("directory data integrity", () => {
       expect(p.summary).toBeTruthy();
       expect(Array.isArray(p.requiredDocs)).toBe(true);
       expect(["Hudson", "Bergen"]).toContain(p.location.county);
-      // Seed data must be honestly labeled synthetic.
-      expect(p.isSynthetic).toBe(true);
+      // Records are honestly labeled — real (verified) or synthetic.
+      expect(typeof p.isSynthetic).toBe("boolean");
     }
   });
 });
@@ -46,7 +46,7 @@ describe("search_programs", () => {
       (p) => p.id,
     );
     expect(ids).toContain("hudson-bsds-snap");
-    expect(ids).toContain("york-street-pantry");
+    expect(ids).toContain("triangle-park-pantry");
   });
 
   it("filters by category", () => {
