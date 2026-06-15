@@ -2,6 +2,7 @@ import { packetSpecSchema } from "@/lib/packet/schema";
 import { buildPacketPdf } from "@/lib/packet/pdf";
 import { rateLimit } from "@/lib/rate-limit";
 import { stackServerApp } from "@/stack/server";
+import { savePacket } from "@/lib/db/queries";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -37,8 +38,20 @@ export async function POST(req: Request) {
     return new Response("That packet is too large.", { status: 413 });
   }
 
+  // Optional link to a saved plan (extra key is stripped from the validated spec).
+  const planId =
+    typeof (json as { planId?: unknown }).planId === "string"
+      ? (json as { planId: string }).planId
+      : null;
+
   try {
     const bytes = await buildPacketPdf(parsed.data);
+
+    // Persist the packet (encrypted) — best-effort, never blocks the download.
+    savePacket({ userId: user.id, planId, spec: parsed.data }).catch((e) =>
+      console.error("[packet/persist]", e),
+    );
+
     return new Response(Buffer.from(bytes), {
       headers: {
         "Content-Type": "application/pdf",

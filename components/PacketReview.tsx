@@ -12,9 +12,12 @@ import type { AssemblePacket } from "@/lib/packet/schema";
 export function PacketReview({
   programIds,
   spec,
+  planId,
 }: {
   programIds: string[];
   spec: AssemblePacket;
+  /** Links the generated packet to a saved plan for persistence. */
+  planId?: string | null;
 }) {
   const rows = useMemo(
     () => reviewRows(programIds, spec.intakeAnswers),
@@ -47,6 +50,7 @@ export function PacketReview({
           programIds,
           intakeAnswers: answers,
           coverLetter: letter,
+          planId: planId ?? null,
         }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

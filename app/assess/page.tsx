@@ -4,7 +4,6 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionPlanView } from "@/components/ActionPlanView";
-import { IntakeChat } from "@/components/IntakeChat";
 import { Markdown } from "@/components/Markdown";
 import { PacketReview } from "@/components/PacketReview";
 import { PreparePacketCTA } from "@/components/PreparePacketCTA";
@@ -14,10 +13,12 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import type { ActionPlan } from "@/lib/agent/schema";
 import type { AssemblePacket } from "@/lib/packet/schema";
+import { computeRequiredFields } from "@/lib/packet/assemble";
+import { fillCoverLetter } from "@/lib/packet/coverLetter";
 import { getProgramById } from "@/lib/directory/search";
 
 type PartLike = TracePart & { text?: string };
-type PacketPhase = "plan" | "intake" | "review";
+type PacketPhase = "plan" | "review";
 
 const MARISOL_EXAMPLE =
   "I live in Jersey City with my two kids, ages 5 and 8. My hours at work were just cut and I'm only bringing in about $1,800 a month now, and I rent my apartment. I just got a notice that my electricity will be shut off next week, and our fridge is almost empty. I don't know where to start or what help I can get.";
@@ -51,6 +52,14 @@ export default function AssessPage() {
   const [packetPhase, setPacketPhase] = useState<PacketPhase>("plan");
   const [packetSpec, setPacketSpec] = useState<AssemblePacket | null>(null);
 
+  // The saved profile (decrypted server-side), used to prefill the packet form.
+  const [profileData, setProfileData] = useState<Record<string, string>>({});
+
+  // Persistence handles: the conversation we're appending to and its saved plan.
+  const conversationId = useRef<string | null>(null);
+  const savedSignature = useRef<string>("");
+  const [planId, setPlanId] = useState<string | null>(null);
+
   const busy = status === "submitted" || status === "streaming";
   const started = messages.length > 0;
 
@@ -74,11 +83,15 @@ export default function AssessPage() {
     [plan],
   );
 
-  // The person's original words, carried into the intake so it isn't re-asked.
-  const situation = useMemo(() => {
-    const firstUser = messages.find((m) => m.role === "user");
-    return firstUser ? textOf(firstUser.parts as PartLike[]) : "";
-  }, [messages]);
+  // Load the saved profile once, to prefill the packet form (no PII to the LLM).
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res?.profile?.data) setProfileData(res.profile.data);
+      })
+      .catch(() => {});
+  }, []);
 
   // Auto-run Marisol's example when arriving from the landing CTA.
   useEffect(() => {
@@ -90,11 +103,70 @@ export default function AssessPage() {
     }
   }, [sendMessage]);
 
+  // After each completed turn, persist the transcript + plan (encrypted server-side).
+  useEffect(() => {
+    if (status !== "ready" || messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    const signature = `${messages.length}:${last?.id ?? ""}`;
+    if (signature === savedSignature.current) return;
+    savedSignature.current = signature;
+
+    const transcript = messages.map((m) => {
+      const parts = m.parts as PartLike[];
+      if (m.role === "user") {
+        return { role: "user" as const, text: textOf(parts) };
+      }
+      return {
+        role: "assistant" as const,
+        text: noteOf(parts),
+        // Keep non-PII structured parts (reasoning steps, plan) for re-render.
+        parts: parts.filter(
+          (p) => p.type !== "text" && p.type !== "data-note",
+        ),
+      };
+    });
+
+    fetch("/api/assessments", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        conversationId: conversationId.current,
+        transcript,
+        plan: plan ?? null,
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((res) => {
+        if (res) {
+          conversationId.current = res.conversationId;
+          setPlanId(res.planId);
+        }
+      })
+      .catch(() => {});
+  }, [status, messages, plan]);
+
   function submit(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
     sendMessage({ text: trimmed });
     setInput("");
+  }
+
+  // Move from plan to packet: prefill required fields from the profile and fill
+  // the cover letter locally from the agent's bracketed draft.
+  function startPacket() {
+    if (!plan) return;
+    const prefill: Record<string, string> = {};
+    for (const f of computeRequiredFields(programIds)) {
+      const v = profileData[f.id];
+      if (v) prefill[f.id] = v;
+    }
+    setPacketSpec({
+      programIds,
+      intakeAnswers: prefill,
+      coverLetter: fillCoverLetter(plan.draftedEmail ?? "", prefill),
+    });
+    setPacketPhase("review");
   }
 
   return (
@@ -157,25 +229,15 @@ export default function AssessPage() {
 
         {/* Packet flow — layered on top of the action plan, never replacing it. */}
         {plan && packetPhase === "plan" && programIds.length > 0 ? (
-          <PreparePacketCTA
-            onStart={() => setPacketPhase("intake")}
-            disabled={busy}
-          />
-        ) : null}
-
-        {packetPhase === "intake" ? (
-          <IntakeChat
-            programIds={programIds}
-            situation={situation}
-            onPacket={(spec) => {
-              setPacketSpec(spec);
-              setPacketPhase("review");
-            }}
-          />
+          <PreparePacketCTA onStart={startPacket} disabled={busy} />
         ) : null}
 
         {packetPhase === "review" && packetSpec ? (
-          <PacketReview programIds={programIds} spec={packetSpec} />
+          <PacketReview
+            programIds={programIds}
+            spec={packetSpec}
+            planId={planId}
+          />
         ) : null}
       </div>
 

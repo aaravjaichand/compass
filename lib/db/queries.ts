@@ -76,17 +76,23 @@ function deriveTitle(plan: ActionPlan): string {
   return `${labels[0].toUpperCase()}${labels.slice(1)} assistance`;
 }
 
+export type TranscriptItem = {
+  role: "user" | "assistant";
+  text: string;
+  parts?: unknown[];
+};
+
 /**
- * Persist one assess turn: create the conversation on the first turn, append the
- * (encrypted) user + assistant messages, and upsert the latest plan. Returns the
- * conversation + plan ids so the client can thread them across turns.
+ * Persist a full assess-session snapshot: create the conversation on first save
+ * (else verify ownership), replace its transcript with the encrypted messages,
+ * and upsert the latest plan. Returns the conversation + plan ids so the client
+ * can thread them across turns and into the packet step. Replacing the whole
+ * transcript each save keeps it idempotent for short crisis conversations.
  */
-export async function saveAssessmentTurn(opts: {
+export async function saveAssessmentSnapshot(opts: {
   userId: string;
   conversationId: string | null;
-  userText: string;
-  assistantText: string;
-  parts: unknown[];
+  transcript: TranscriptItem[];
   plan: ActionPlan | null;
 }): Promise<{ conversationId: string; planId: string | null }> {
   const db = getDb();
@@ -126,41 +132,27 @@ export async function saveAssessmentTurn(opts: {
     }
   }
 
-  const existing = await db
-    .select({ seq: messages.seq })
-    .from(messages)
-    .where(eq(messages.conversationId, conversationId));
-  let seq = existing.reduce((max, r) => Math.max(max, r.seq), -1) + 1;
-
-  if (opts.userText) {
-    await db.insert(messages).values({
-      conversationId,
-      userId: opts.userId,
-      role: "user",
-      encContent: encrypt(opts.userText),
-      seq: seq++,
-    });
+  const cid = conversationId;
+  await db.delete(messages).where(eq(messages.conversationId, cid));
+  if (opts.transcript.length) {
+    await db.insert(messages).values(
+      opts.transcript.map((m, i) => ({
+        conversationId: cid,
+        userId: opts.userId,
+        role: m.role,
+        encContent: m.text ? encrypt(m.text) : null,
+        partsJson: m.parts ?? null,
+        seq: i,
+      })),
+    );
   }
-  await db.insert(messages).values({
-    conversationId,
-    userId: opts.userId,
-    role: "assistant",
-    encContent: opts.assistantText ? encrypt(opts.assistantText) : null,
-    partsJson: opts.parts,
-    seq: seq++,
-  });
 
   let planId: string | null = null;
   if (opts.plan) {
     const [existingPlan] = await db
       .select({ id: plans.id })
       .from(plans)
-      .where(
-        and(
-          eq(plans.conversationId, conversationId),
-          eq(plans.userId, opts.userId),
-        ),
-      )
+      .where(and(eq(plans.conversationId, cid), eq(plans.userId, opts.userId)))
       .limit(1);
     if (existingPlan) {
       await db
@@ -173,7 +165,7 @@ export async function saveAssessmentTurn(opts: {
         .insert(plans)
         .values({
           userId: opts.userId,
-          conversationId,
+          conversationId: cid,
           planJson: opts.plan,
           status: "saved",
         })
@@ -182,7 +174,7 @@ export async function saveAssessmentTurn(opts: {
     }
   }
 
-  return { conversationId, planId };
+  return { conversationId: cid, planId };
 }
 
 export type ConversationSummary = {
