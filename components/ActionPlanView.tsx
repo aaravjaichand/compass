@@ -191,7 +191,14 @@ function DraftedEmail({ email }: { email: string }) {
   );
 }
 
-export function ActionPlanView({ plan }: { plan: ActionPlan }) {
+export function ActionPlanView({
+  plan,
+  sample = false,
+}: {
+  plan: ActionPlan;
+  /** Read-only context (e.g. the public landing example): hides the print action. */
+  sample?: boolean;
+}) {
   const matches = plan.matches ?? [];
   const flags = plan.flags ?? [];
 
@@ -200,19 +207,21 @@ export function ActionPlanView({ plan }: { plan: ActionPlan }) {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <span className="font-mono text-xs tracking-wide text-muted">
-            YOUR ACTION PLAN
+            {sample ? "EXAMPLE ACTION PLAN" : "YOUR ACTION PLAN"}
           </span>
           <h2 className="mt-1 text-2xl tracking-tight">
             A path you can act on today
           </h2>
         </div>
-        <Button
-          variant="secondary"
-          onClick={() => window.print()}
-          className="print:hidden"
-        >
-          Print / Save as PDF
-        </Button>
+        {!sample ? (
+          <Button
+            variant="secondary"
+            onClick={() => window.print()}
+            className="print:hidden"
+          >
+            Print / Save as PDF
+          </Button>
+        ) : null}
       </div>
 
       {plan.situationSummary ? (

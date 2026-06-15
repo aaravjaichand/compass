@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { ActionPlanView } from "@/components/ActionPlanView";
+import { MARISOL_SAMPLE_PLAN } from "@/lib/sample/marisol-plan";
 
 const STEPS = [
   {
@@ -66,7 +68,8 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-4 text-sm text-subtle">
-            No account needed. Compass prepares; you decide and file.
+            Compass prepares; you decide and file. Nothing is ever submitted for
+            you.
           </p>
         </div>
 
@@ -115,6 +118,24 @@ export default function Home() {
             </Card>
           ))}
         </div>
+      </section>
+
+      {/* A real example — the output shape, shown before the sign-in wall */}
+      <section className="border-t border-border py-16">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl tracking-tight">What Compass produces</h2>
+            <p className="mt-2 max-w-xl text-muted">
+              A real example of the packet Marisol receives — matched programs,
+              why each fits, a confidence level, the documents to bring, and a
+              drafted cover email.
+            </p>
+          </div>
+          <Badge>Example · read-only</Badge>
+        </div>
+        <Card className="mt-8 bg-surface-2/40">
+          <ActionPlanView plan={MARISOL_SAMPLE_PLAN} sample />
+        </Card>
       </section>
 
       {/* Why an agent */}
