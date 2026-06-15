@@ -28,24 +28,39 @@ const bodySchema = z.object({
   language: z.enum(["en", "es"]).optional(),
 });
 
-type Provider = "groq" | "anthropic";
+/** A Claude model id routes to Anthropic; anything else (llama-*,
+ *  openai/gpt-oss-*, moonshotai/*, …) routes to Groq. */
+function isAnthropicModel(model: string): boolean {
+  return /^(claude|anthropic|us\.anthropic)/i.test(model);
+}
 
 /**
- * Pick the LLM backend. Defaults to Groq (the free-demo backend, no API credits
- * needed) whenever GROQ_API_KEY is set; otherwise falls back to Anthropic.
- * Force a specific one with AGENT_PROVIDER=groq|anthropic.
+ * One knob: LLM_MODEL. The model name alone picks the backend and which key is
+ * used — a Claude model uses the Anthropic key; any other model uses the Groq
+ * key. If LLM_MODEL is unset, default to whichever provider has a key configured
+ * (Groq first, since it's the free demo backend).
  */
-function chooseProvider(): Provider | null {
-  const forced = process.env.AGENT_PROVIDER?.toLowerCase();
+function resolveBackend():
+  | { provider: "groq" | "anthropic"; model: string }
+  | { error: string } {
   const hasGroq = Boolean(process.env.GROQ_API_KEY);
   const hasAnthropic = Boolean(
     process.env.CLAUDE_CODE_OAUTH_TOKEN || process.env.ANTHROPIC_API_KEY,
   );
-  if (forced === "groq") return hasGroq ? "groq" : null;
-  if (forced === "anthropic") return hasAnthropic ? "anthropic" : null;
-  if (hasGroq) return "groq";
-  if (hasAnthropic) return "anthropic";
-  return null;
+  const model =
+    process.env.LLM_MODEL?.trim() ||
+    (hasGroq ? GROQ_DEFAULT_MODEL : ANTHROPIC_DEFAULT_MODEL);
+  const provider = isAnthropicModel(model) ? "anthropic" : "groq";
+
+  if (provider === "groq" && !hasGroq) {
+    return { error: `set GROQ_API_KEY — LLM_MODEL="${model}" is a Groq model.` };
+  }
+  if (provider === "anthropic" && !hasAnthropic) {
+    return {
+      error: `set an Anthropic key — LLM_MODEL="${model}" is a Claude model.`,
+    };
+  }
+  return { provider, model };
 }
 
 export async function POST(req: Request) {
@@ -61,12 +76,11 @@ export async function POST(req: Request) {
   // agent reads only the bundled directory and never touches user data, so an
   // unauthenticated run is safe; abuse is bounded by the IP rate-limit above.
 
-  const provider = chooseProvider();
-  if (!provider) {
-    return new Response(
-      "The assistant isn't configured yet. Set GROQ_API_KEY (or an Anthropic key).",
-      { status: 503 },
-    );
+  const backend = resolveBackend();
+  if ("error" in backend) {
+    return new Response(`The assistant isn't configured: ${backend.error}`, {
+      status: 503,
+    });
   }
 
   let json: unknown;
@@ -105,12 +119,12 @@ export async function POST(req: Request) {
     },
     execute: async ({ writer }) => {
       // Groq backend: a plain streaming fetch, no sandbox — the free-demo default.
-      if (provider === "groq") {
+      if (backend.provider === "groq") {
         await runGroqAgent({
           writer,
           prompt,
           systemPrompt,
-          model: process.env.GROQ_MODEL ?? GROQ_DEFAULT_MODEL,
+          model: backend.model,
           terminalPartType: "data-plan",
         });
         return;
@@ -120,7 +134,7 @@ export async function POST(req: Request) {
         writer,
         prompt,
         systemPrompt,
-        model: process.env.LLM_MODEL ?? ANTHROPIC_DEFAULT_MODEL,
+        model: backend.model,
         mcpServers: { compass: compassServer },
         allowedTools: ALLOWED_TOOLS,
         disallowedTools: DISALLOWED_TOOLS,

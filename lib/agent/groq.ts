@@ -10,11 +10,12 @@ import { actionPlanSchema } from "./schema";
 import type { StreamWriter } from "./stream";
 
 /**
- * Default Groq model. `llama-3.3-70b-versatile` is the most reliable tool-caller
- * on Groq's free tier (strong function-calling + JSON, generous rate limits).
- * Override with GROQ_MODEL (e.g. `openai/gpt-oss-120b` for more reasoning).
+ * Default Groq model. `openai/gpt-oss-120b` reliably drives the multi-step tool
+ * loop and the nested final-plan schema on Groq's free tier (lighter models like
+ * llama-3.3-70b fail the function call). Override via LLM_MODEL — `openai/gpt-oss-20b`
+ * is a faster, lighter alternative that also completes the loop.
  */
-export const GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile";
+export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b";
 
 const categoryEnum = z.enum([
   "food",
@@ -64,8 +65,10 @@ export async function runGroqAgent(opts: {
           .optional()
           .describe("Hudson for Jersey City; Bergen for Bergen towns."),
       }),
-      // Lean payload (no requiredDocs/source) so the model must call
-      // get_required_docs, which keeps the reasoning trace richer.
+      // Minimal payload — only what the model needs to choose programs and
+      // reason about eligibility. The UI renders phone/address/hours/docs from
+      // the directory by id, so they're left out to stay well under the free
+      // tier's tokens-per-minute limit (full records blow the budget per step).
       execute: async (args) =>
         searchPrograms(args).map((p) => ({
           id: p.id,
@@ -73,11 +76,9 @@ export async function runGroqAgent(opts: {
           org: p.org,
           category: p.category,
           summary: p.summary,
-          services: p.services,
-          eligibility: p.eligibility,
-          location: p.location,
-          hours: p.hours,
-          contact: p.contact,
+          eligibility: p.eligibility.summary,
+          city: p.location.city,
+          county: p.location.county,
         })),
     }),
     get_required_docs: tool({
