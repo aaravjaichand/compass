@@ -11,7 +11,7 @@ const STEPS = [
     n: "01",
     label: "DESCRIBE",
     title: "You describe your situation",
-    body: "In plain language, typed or spoken. No forms, no jargon, no logging in.",
+    body: "In plain language. No forms, no jargon, no logging in.",
   },
   {
     n: "02",

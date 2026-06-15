@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActionPlanView } from "@/components/ActionPlanView";
+import { ActionPlanView, type Lang } from "@/components/ActionPlanView";
 import { Markdown } from "@/components/Markdown";
 import { PacketReview } from "@/components/PacketReview";
 import { PreparePacketCTA } from "@/components/PreparePacketCTA";
@@ -11,6 +11,7 @@ import { ReasoningTrace, type TracePart } from "@/components/ReasoningTrace";
 import { WorkingIndicator } from "@/components/WorkingIndicator";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
+import { cn } from "@/lib/cn";
 import type { ActionPlan } from "@/lib/agent/schema";
 import type { AssemblePacket } from "@/lib/packet/schema";
 import { computeRequiredFields } from "@/lib/packet/assemble";
@@ -22,6 +23,40 @@ type PacketPhase = "plan" | "review";
 
 const MARISOL_EXAMPLE =
   "I live in Jersey City with my two kids, ages 5 and 8. My hours at work were just cut and I'm only bringing in about $1,800 a month now, and I rent my apartment. I just got a notice that my electricity will be shut off next week, and our fridge is almost empty. I don't know where to start or what help I can get.";
+
+const MARISOL_EXAMPLE_ES =
+  "Vivo en Jersey City con mis dos hijos, de 5 y 8 años. Me redujeron las horas en el trabajo y ahora solo gano unos $1,800 al mes, y alquilo mi apartamento. Acabo de recibir un aviso de que me van a cortar la electricidad la próxima semana, y el refrigerador está casi vacío. No sé por dónde empezar ni qué ayuda puedo conseguir.";
+
+const UI: Record<Lang, Record<string, string>> = {
+  en: {
+    eyebrow: "DESCRIBE YOUR SITUATION",
+    title: "Tell Compass what's going on",
+    intro:
+      "In your own words — what happened, who's affected, and where you live. Compass finds local programs, checks rough eligibility, and prepares a packet you can act on. It never submits anything for you.",
+    placeholderStart:
+      "For example: I live in Jersey City, my hours got cut, and I got an electricity shutoff notice…",
+    placeholderReply: "Reply to Compass…",
+    getPlan: "Get my plan",
+    send: "Send",
+    tryExample: "Not sure where to start? Try Marisol's example.",
+    error: "Something went wrong reaching the assistant. Please try again.",
+    ariaDescribe: "Describe your situation",
+  },
+  es: {
+    eyebrow: "DESCRIBE TU SITUACIÓN",
+    title: "Cuéntale a Compass qué está pasando",
+    intro:
+      "En tus propias palabras — qué pasó, a quién afecta y dónde vives. Compass busca programas locales, revisa tu elegibilidad aproximada y prepara un paquete con el que puedes actuar. Nunca envía nada por ti.",
+    placeholderStart:
+      "Por ejemplo: Vivo en Jersey City, me redujeron las horas y recibí un aviso de corte de electricidad…",
+    placeholderReply: "Responde a Compass…",
+    getPlan: "Ver mi plan",
+    send: "Enviar",
+    tryExample: "¿No sabes por dónde empezar? Prueba el ejemplo de Marisol.",
+    error: "Algo salió mal al contactar al asistente. Inténtalo de nuevo.",
+    ariaDescribe: "Describe tu situación",
+  },
+};
 
 function textOf(parts: PartLike[]): string {
   return parts
@@ -56,6 +91,7 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
   );
   const { messages, sendMessage, status, error } = useChat({ transport });
   const [input, setInput] = useState("");
+  const [language, setLanguage] = useState<Lang>("en");
   const sentExample = useRef(false);
 
   const [packetPhase, setPacketPhase] = useState<PacketPhase>("plan");
@@ -71,6 +107,11 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
 
   const busy = status === "submitted" || status === "streaming";
   const started = messages.length > 0;
+  const ui = UI[language];
+
+  // Send a turn, telling the agent which language to answer in.
+  const send = (text: string, lang: Lang) =>
+    sendMessage({ text }, { body: { language: lang } });
 
   // The most recent grounded action plan, if one has streamed in.
   const plan = useMemo<ActionPlan | undefined>(() => {
@@ -103,15 +144,22 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
       .catch(() => {});
   }, [guest]);
 
-  // Auto-run Marisol's example when arriving from the landing CTA.
+  // Auto-run Marisol's example when arriving from the landing CTA. A `lang=es`
+  // param opens the demo straight into Spanish.
   useEffect(() => {
     if (sentExample.current) return;
     const params = new URLSearchParams(window.location.search);
+    const urlLang: Lang = params.get("lang") === "es" ? "es" : "en";
+    // One-time sync of a client-only query param into state on mount; doing it
+    // in a lazy initializer would mismatch the server-rendered HTML.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (urlLang === "es") setLanguage("es");
     if (params.get("example") === "marisol") {
       sentExample.current = true;
-      sendMessage({ text: MARISOL_EXAMPLE });
+      send(urlLang === "es" ? MARISOL_EXAMPLE_ES : MARISOL_EXAMPLE, urlLang);
     }
-  }, [sendMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // After each completed turn, persist the transcript + plan (encrypted server-side).
   useEffect(() => {
@@ -159,7 +207,7 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
   function submit(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy) return;
-    sendMessage({ text: trimmed });
+    send(trimmed, language);
     setInput("");
   }
 
@@ -185,16 +233,27 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
       {!started ? (
         <header className="print:hidden">
           <span className="font-mono text-xs tracking-wide text-muted">
-            DESCRIBE YOUR SITUATION
+            {ui.eyebrow}
           </span>
-          <h1 className="mt-3 text-3xl tracking-tight">
-            Tell Compass what&apos;s going on
-          </h1>
-          <p className="mt-3 text-muted">
-            In your own words — what happened, who&apos;s affected, and where you
-            live. Compass finds local programs, checks rough eligibility, and
-            prepares a packet you can act on. It never submits anything for you.
-          </p>
+          <h1 className="mt-3 text-3xl tracking-tight">{ui.title}</h1>
+          <p className="mt-3 text-muted">{ui.intro}</p>
+          <div className="mt-5 inline-flex rounded-md border border-border p-0.5 text-xs font-medium">
+            {(["en", "es"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLanguage(l)}
+                className={cn(
+                  "rounded px-3 py-1.5 transition-colors",
+                  language === l
+                    ? "bg-surface-2 text-fg"
+                    : "text-muted hover:text-fg",
+                )}
+              >
+                {l === "en" ? "English" : "Español"}
+              </button>
+            ))}
+          </div>
         </header>
       ) : null}
 
@@ -224,7 +283,10 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
                 </div>
               ) : null}
               {planPart?.data ? (
-                <ActionPlanView plan={planPart.data as ActionPlan} />
+                <ActionPlanView
+                  plan={planPart.data as ActionPlan}
+                  lang={language}
+                />
               ) : null}
             </div>
           );
@@ -233,9 +295,7 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
         {busy ? <WorkingIndicator /> : null}
 
         {error ? (
-          <p className="text-sm text-danger print:hidden">
-            Something went wrong reaching the assistant. Please try again.
-          </p>
+          <p className="text-sm text-danger print:hidden">{ui.error}</p>
         ) : null}
 
         {/* Packet flow — layered on top of the action plan, never replacing it.
@@ -262,7 +322,7 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
           className="mt-6 print:hidden"
         >
           <Textarea
-            aria-label="Describe your situation"
+            aria-label={ui.ariaDescribe}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -272,25 +332,23 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
               }
             }}
             rows={started ? 2 : 5}
-            placeholder={
-              started
-                ? "Reply to Compass…"
-                : "For example: I live in Jersey City, my hours got cut, and I got an electricity shutoff notice…"
-            }
+            placeholder={started ? ui.placeholderReply : ui.placeholderStart}
             disabled={busy}
           />
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
             <Button type="submit" disabled={busy || !input.trim()}>
-              {started ? "Send" : "Get my plan"}
+              {started ? ui.send : ui.getPlan}
             </Button>
             {!started ? (
               <button
                 type="button"
-                onClick={() => submit(MARISOL_EXAMPLE)}
+                onClick={() =>
+                  submit(language === "es" ? MARISOL_EXAMPLE_ES : MARISOL_EXAMPLE)
+                }
                 disabled={busy}
                 className="text-sm text-muted underline-offset-4 hover:text-fg hover:underline disabled:opacity-50"
               >
-                Not sure where to start? Try Marisol&apos;s example.
+                {ui.tryExample}
               </button>
             ) : null}
           </div>

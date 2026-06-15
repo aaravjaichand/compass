@@ -23,6 +23,7 @@ const MAX_BODY_CHARS = 24_000;
 
 const bodySchema = z.object({
   messages: z.array(z.unknown()).min(1).max(40),
+  language: z.enum(["en", "es"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -68,6 +69,13 @@ export async function POST(req: Request) {
   const model = process.env.LLM_MODEL ?? DEFAULT_MODEL;
   const cwd = mkdtempSync(join(tmpdir(), "compass-"));
 
+  // When the user picks Spanish, steer the agent's entire output to Spanish
+  // (the LANGUAGE rule in SYSTEM_PROMPT does the rest).
+  const languageDirective =
+    parsed.data.language === "es"
+      ? "The person is using Spanish. Write the entire plan and every message in Spanish.\n\n"
+      : "";
+
   const stream = createUIMessageStream({
     onError: (error) => {
       console.error("[agent]", error);
@@ -77,7 +85,7 @@ export async function POST(req: Request) {
       await runAgent({
         writer,
         prompt,
-        systemPrompt: `Today's date is ${todayInET()} (Eastern Time).\n\n${SYSTEM_PROMPT}`,
+        systemPrompt: `Today's date is ${todayInET()} (Eastern Time).\n\n${languageDirective}${SYSTEM_PROMPT}`,
         model,
         mcpServers: { compass: compassServer },
         allowedTools: ALLOWED_TOOLS,
