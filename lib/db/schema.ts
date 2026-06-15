@@ -20,6 +20,7 @@ import {
   boolean,
   integer,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 const created = timestamp("created_at", { withTimezone: true, mode: "date" })
@@ -40,6 +41,12 @@ export const profiles = pgTable("profiles", {
   onboardingComplete: boolean("onboarding_complete").notNull().default(false),
   /** 'light' | 'dark' | 'system' — cross-device mirror of the theme cookie. */
   theme: text("theme").notNull().default("system"),
+  /**
+   * Opt-in long-term memory (Settings → Memory). OFF by default — Compass only
+   * remembers across sessions once the person turns this on; everything stored is
+   * visible and deletable from the same screen.
+   */
+  memoryEnabled: boolean("memory_enabled").notNull().default(false),
   createdAt: created,
   updatedAt: updated,
 });
@@ -130,6 +137,43 @@ export const sharedPlans = pgTable("shared_plans", {
   createdAt: created,
 });
 
+/**
+ * Compass's optional, user-controlled long-term memory. Each row is ONE durable,
+ * minimized fact the assistant may recall to make a returning person's next session
+ * faster and warmer — e.g. "household: two children", "recent need: utility shutoff",
+ * "in progress: applying to LIHEAP and SNAP". Gated on `profiles.memory_enabled`
+ * and fully listable/deletable from Settings → Memory.
+ *
+ * Minimization is enforced by the extractor (lib/memory/extract.ts): it NEVER stores
+ * raw identifiers (SSN/ITIN, date of birth, account/case numbers, full legal name,
+ * exact street address). `enc_content` is encrypted at rest like every PII column;
+ * `kind` / `label` / `mem_key` are plaintext, non-PII, and safe to list and dedupe on.
+ */
+export const memories = pgTable(
+  "memories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    // 'situation' | 'household' | 'need' | 'progress' | 'preference'
+    kind: text("kind").notNull(),
+    /** Plaintext non-PII slug for dedupe/upsert, e.g. "household.children". */
+    memKey: text("mem_key").notNull(),
+    /** Plaintext non-PII short label for the UI, e.g. "Household". */
+    label: text("label").notNull(),
+    /** ENCRYPTED: the remembered fact, one short sentence. */
+    encContent: text("enc_content").notNull(),
+    /** UI hint to render with extra care (health/finances/immigration). No server effect. */
+    sensitive: boolean("sensitive").notNull().default(false),
+    sourceConversationId: uuid("source_conversation_id").references(
+      () => conversations.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: created,
+    updatedAt: updated,
+  },
+  (t) => [uniqueIndex("memories_user_key").on(t.userId, t.memKey)],
+);
+
 export type Profile = typeof profiles.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
@@ -137,3 +181,4 @@ export type Plan = typeof plans.$inferSelect;
 export type Packet = typeof packets.$inferSelect;
 export type ProgramStatus = typeof programStatus.$inferSelect;
 export type SharedPlan = typeof sharedPlans.$inferSelect;
+export type Memory = typeof memories.$inferSelect;

@@ -4,6 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "./index";
 import {
   conversations,
+  memories,
   messages,
   packets,
   plans,
@@ -14,6 +15,7 @@ import {
 import { decrypt, decryptJson, encrypt, encryptJson } from "@/lib/crypto";
 import { getProgramById } from "@/lib/directory/search";
 import type { ActionPlan } from "@/lib/agent/schema";
+import type { MemoryItem, MemoryKind, StoredMemory } from "@/lib/memory/types";
 import type { PacketSpec } from "@/lib/packet/schema";
 
 /** field id -> value, the decrypted profile shape (matches lib/packet/fields.ts ids). */
@@ -26,6 +28,7 @@ export async function getProfile(userId: string): Promise<{
   county: string | null;
   onboardingComplete: boolean;
   theme: string;
+  memoryEnabled: boolean;
 } | null> {
   const db = getDb();
   const [row] = await db
@@ -39,6 +42,7 @@ export async function getProfile(userId: string): Promise<{
     county: row.county,
     onboardingComplete: row.onboardingComplete,
     theme: row.theme,
+    memoryEnabled: row.memoryEnabled,
   };
 }
 
@@ -49,6 +53,7 @@ export async function upsertProfile(
     county?: string;
     theme?: string;
     onboardingComplete?: boolean;
+    memoryEnabled?: boolean;
   },
 ): Promise<void> {
   const db = getDb();
@@ -58,11 +63,95 @@ export async function upsertProfile(
   if (patch.theme !== undefined) set.theme = patch.theme;
   if (patch.onboardingComplete !== undefined)
     set.onboardingComplete = patch.onboardingComplete;
+  if (patch.memoryEnabled !== undefined) set.memoryEnabled = patch.memoryEnabled;
 
   await db
     .insert(profiles)
     .values({ userId, ...set })
     .onConflictDoUpdate({ target: profiles.userId, set });
+}
+
+// ---------------------------------------------------------------- memory
+
+/** Is long-term memory turned on for this user? Cheap gate for the agent path. */
+export async function isMemoryEnabled(userId: string): Promise<boolean> {
+  const db = getDb();
+  const [row] = await db
+    .select({ memoryEnabled: profiles.memoryEnabled })
+    .from(profiles)
+    .where(eq(profiles.userId, userId))
+    .limit(1);
+  return row?.memoryEnabled ?? false;
+}
+
+/** Every memory Compass holds for a user (decrypted), newest first. */
+export async function listMemories(userId: string): Promise<StoredMemory[]> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(memories)
+    .where(eq(memories.userId, userId))
+    .orderBy(desc(memories.updatedAt));
+  return rows.map((r) => ({
+    id: r.id,
+    kind: r.kind as MemoryKind,
+    key: r.memKey,
+    label: r.label,
+    content: decrypt(r.encContent),
+    sensitive: r.sensitive,
+    updatedAt: r.updatedAt,
+  }));
+}
+
+/**
+ * Persist extracted memories, upserting by (userId, key) so re-running a session
+ * refreshes a fact instead of duplicating it. Content is encrypted at rest.
+ */
+export async function upsertMemories(
+  userId: string,
+  items: MemoryItem[],
+  sourceConversationId?: string | null,
+): Promise<void> {
+  if (!items.length) return;
+  const db = getDb();
+  for (const m of items) {
+    await db
+      .insert(memories)
+      .values({
+        userId,
+        kind: m.kind,
+        memKey: m.key,
+        label: m.label,
+        encContent: encrypt(m.content),
+        sensitive: m.sensitive,
+        sourceConversationId: sourceConversationId ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [memories.userId, memories.memKey],
+        set: {
+          kind: m.kind,
+          label: m.label,
+          encContent: encrypt(m.content),
+          sensitive: m.sensitive,
+          sourceConversationId: sourceConversationId ?? null,
+          updatedAt: new Date(),
+        },
+      });
+  }
+}
+
+/** Forget a single memory (ownership-checked). */
+export async function deleteMemory(userId: string, id: string): Promise<void> {
+  const db = getDb();
+  await db
+    .delete(memories)
+    .where(and(eq(memories.id, id), eq(memories.userId, userId)));
+}
+
+/** Forget everything for a user (the "clear all" control). */
+export async function clearMemories(userId: string): Promise<void> {
+  const db = getDb();
+  await db.delete(memories).where(eq(memories.userId, userId));
 }
 
 // ------------------------------------------------------- assessments / plans
@@ -372,6 +461,7 @@ export async function deleteAllUserData(userId: string): Promise<void> {
   await db.delete(packets).where(eq(packets.userId, userId));
   await db.delete(plans).where(eq(plans.userId, userId));
   await db.delete(messages).where(eq(messages.userId, userId));
+  await db.delete(memories).where(eq(memories.userId, userId));
   await db.delete(conversations).where(eq(conversations.userId, userId));
   await db.delete(profiles).where(eq(profiles.userId, userId));
 }
@@ -397,6 +487,7 @@ export async function exportUserData(userId: string) {
     .select()
     .from(programStatus)
     .where(eq(programStatus.userId, userId));
+  const memoryRows = await listMemories(userId);
 
   return {
     profile,
@@ -437,6 +528,13 @@ export async function exportUserData(userId: string) {
       programId: s.programId,
       status: s.status,
       changedAt: s.changedAt,
+    })),
+    memories: memoryRows.map((m) => ({
+      kind: m.kind,
+      label: m.label,
+      content: m.content,
+      sensitive: m.sensitive,
+      updatedAt: m.updatedAt,
     })),
   };
 }
