@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono } from "next/font/google";
+import { StackProvider, StackTheme } from "@stackframe/stack";
 import "./globals.css";
+import { stackServerApp } from "@/stack/server";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
@@ -37,11 +39,15 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <div className="flex min-h-screen flex-col">
-          <SiteHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
-          <SiteFooter />
-        </div>
+        <StackProvider app={stackServerApp}>
+          <StackTheme>
+            <div className="flex min-h-screen flex-col">
+              <SiteHeader />
+              <main className="flex flex-1 flex-col">{children}</main>
+              <SiteFooter />
+            </div>
+          </StackTheme>
+        </StackProvider>
       </body>
     </html>
   );

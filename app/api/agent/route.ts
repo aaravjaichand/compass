@@ -11,6 +11,7 @@ import { SYSTEM_PROMPT } from "@/lib/agent/prompt";
 import { ALLOWED_TOOLS, DISALLOWED_TOOLS, compassServer } from "@/lib/agent/tools";
 import { buildPrompt, runAgentStream, todayInET } from "@/lib/agent/stream";
 import { rateLimit } from "@/lib/rate-limit";
+import { stackServerApp } from "@/stack/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -29,6 +30,11 @@ export async function POST(req: Request) {
     return new Response("Too many requests. Please wait a moment and try again.", {
       status: 429,
     });
+  }
+
+  const user = await stackServerApp.getUser();
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   if (!process.env.CLAUDE_CODE_OAUTH_TOKEN && !process.env.ANTHROPIC_API_KEY) {
