@@ -4,7 +4,6 @@ import {
   get_required_docs as lookupRequiredDocs,
   search_programs as searchPrograms,
 } from "@/lib/directory/search";
-import { actionPlanSchema } from "./schema";
 
 const categoryEnum = z.enum([
   "food",
@@ -64,12 +63,5 @@ export const tools = {
       programId: z.string().describe("An id returned by search_programs."),
     }),
     execute: async ({ programId }) => lookupRequiredDocs({ programId }),
-  }),
-
-  present_action_plan: tool({
-    description:
-      "Present the final, grounded action plan. Call this exactly once, last, after searching and gathering required documents.",
-    inputSchema: actionPlanSchema,
-    execute: async () => ({ ok: true }),
   }),
 };

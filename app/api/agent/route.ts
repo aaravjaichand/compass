@@ -1,13 +1,16 @@
 import {
   convertToModelMessages,
-  hasToolCall,
+  createUIMessageStream,
+  createUIMessageStreamResponse,
+  generateObject,
   stepCountIs,
   streamText,
   type UIMessage,
 } from "ai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { z } from "zod";
-import { SYSTEM_PROMPT } from "@/lib/agent/prompt";
+import { PLAN_PROMPT, SYSTEM_PROMPT } from "@/lib/agent/prompt";
+import { actionPlanSchema } from "@/lib/agent/schema";
 import { tools } from "@/lib/agent/tools";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -15,17 +18,26 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 // Swappable, OpenAI-compatible provider — defaults to Groq's free tier.
+// Structured outputs (json_schema) keep the assembled plan strictly on-schema.
 const provider = createOpenAICompatible({
   name: "compass-llm",
   baseURL: process.env.LLM_BASE_URL ?? "https://api.groq.com/openai/v1",
   apiKey: process.env.LLM_API_KEY ?? "",
+  supportsStructuredOutputs: true,
 });
+
+// llama-4-scout drives the tool loop; gpt-oss-120b assembles the structured
+// plan (a single, non-streaming call where it excels at on-schema JSON).
+const DEFAULT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+const DEFAULT_PLAN_MODEL = "openai/gpt-oss-120b";
 
 const bodySchema = z.object({
   messages: z.array(z.unknown()).min(1).max(40),
 });
 
 const MAX_BODY_CHARS = 24_000;
+const STREAM_ERROR =
+  "Something went wrong reaching the assistant. Please try again in a moment.";
 
 export async function POST(req: Request) {
   const ip =
@@ -62,20 +74,64 @@ export async function POST(req: Request) {
     });
   }
 
-  const model = provider(process.env.LLM_MODEL ?? "llama-3.3-70b-versatile");
+  const model = provider(process.env.LLM_MODEL ?? DEFAULT_MODEL);
   const modelMessages = await convertToModelMessages(messages);
 
-  const result = streamText({
-    model,
-    system: SYSTEM_PROMPT,
-    messages: modelMessages,
-    tools,
-    // Bound the loop and end right after the plan is presented.
-    stopWhen: [stepCountIs(10), hasToolCall("present_action_plan")],
+  const stream = createUIMessageStream({
+    onError: (error) => {
+      console.error("[agent] stream error:", error);
+      return STREAM_ERROR;
+    },
+    execute: async ({ writer }) => {
+      // 1) Reasoning loop with the simple directory tools — streamed live so
+      //    the client can show the agent's steps.
+      const result = streamText({
+        model,
+        system: SYSTEM_PROMPT,
+        messages: modelMessages,
+        tools,
+        stopWhen: stepCountIs(8),
+      });
+      writer.merge(result.toUIMessageStream());
+
+      // 2) Collect the programs the agent actually found — this deduped list is
+      //    the only thing the plan may cite (grounding) and a clean context for
+      //    structured generation. If nothing was found, the agent only asked a
+      //    clarifying question; stop and let that stream.
+      const steps = await result.steps;
+      const candidates = new Map<string, unknown>();
+      for (const step of steps) {
+        for (const tr of step.toolResults) {
+          const r = tr as { toolName: string; output: unknown };
+          if (r.toolName === "search_programs" && Array.isArray(r.output)) {
+            for (const prog of r.output as Array<{ id?: string }>) {
+              if (prog?.id) candidates.set(prog.id, prog);
+            }
+          }
+        }
+      }
+      if (candidates.size === 0) return;
+
+      // 3) Assemble the grounded plan with structured output.
+      const planModel = provider(process.env.LLM_PLAN_MODEL ?? DEFAULT_PLAN_MODEL);
+      const { object: plan } = await generateObject({
+        model: planModel,
+        schema: actionPlanSchema,
+        system: PLAN_PROMPT,
+        messages: [
+          ...modelMessages,
+          {
+            role: "user",
+            content: `Candidate programs found in the directory. Use ONLY these program ids in the plan:\n${JSON.stringify(
+              [...candidates.values()],
+            )}`,
+          },
+        ],
+      });
+
+      writer.write({ type: "data-plan", data: plan });
+    },
   });
 
-  return result.toUIMessageStreamResponse({
-    onError: () =>
-      "Something went wrong reaching the assistant. Please try again in a moment.",
-  });
+  return createUIMessageStreamResponse({ stream });
 }
