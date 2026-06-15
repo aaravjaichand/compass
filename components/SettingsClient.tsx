@@ -9,6 +9,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Tabs } from "@/components/ui/Tabs";
 import { Toast } from "@/components/ui/Toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { MemorySettings } from "@/components/MemorySettings";
 import type { Tone } from "@/components/ui/StatusDot";
 
 type Theme = "light" | "dark" | "system";
@@ -28,6 +29,7 @@ const PROFILE_FIELDS: { id: string; label: string }[] = [
 
 const TABS = [
   { key: "profile", label: "Profile" },
+  { key: "memory", label: "Memory" },
   { key: "account", label: "Account" },
   { key: "data", label: "Data" },
   { key: "appearance", label: "Appearance" },
@@ -37,10 +39,12 @@ export function SettingsClient({
   email,
   initialProfile,
   initialTheme,
+  initialMemoryEnabled,
 }: {
   email: string;
   initialProfile: Record<string, string>;
   initialTheme: Theme;
+  initialMemoryEnabled: boolean;
 }) {
   const [tab, setTab] = useState("profile");
   const [toast, setToast] = useState<ToastState>(null);
@@ -51,6 +55,12 @@ export function SettingsClient({
 
       {tab === "profile" ? (
         <ProfileSection initial={initialProfile} setToast={setToast} />
+      ) : null}
+      {tab === "memory" ? (
+        <MemorySettings
+          initialEnabled={initialMemoryEnabled}
+          setToast={setToast}
+        />
       ) : null}
       {tab === "account" ? (
         <AccountSection email={email} setToast={setToast} />

@@ -19,6 +19,7 @@ export default async function SettingsPage() {
           initialTheme={
             (profile?.theme as "light" | "dark" | "system") ?? "system"
           }
+          initialMemoryEnabled={profile?.memoryEnabled ?? false}
         />
       </div>
     </div>

@@ -6,10 +6,11 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { StatusDot } from "@/components/ui/StatusDot";
+import { Toggle } from "@/components/ui/Toggle";
 
-type Step = 0 | 1 | 2 | 3;
+type Step = 0 | 1 | 2 | 3 | 4;
 
-const TOTAL = 4;
+const TOTAL = 5;
 
 export default function OnboardingPage() {
   const [step, setStep] = useState<Step>(0);
@@ -23,6 +24,7 @@ export default function OnboardingPage() {
   const [zip, setZip] = useState("");
   const [phone, setPhone] = useState("");
   const [county, setCounty] = useState("Hudson");
+  const [memoryOn, setMemoryOn] = useState(true);
 
   function next() {
     setStep((s) => Math.min(TOTAL - 1, s + 1) as Step);
@@ -44,7 +46,7 @@ export default function OnboardingPage() {
       const res = await fetch("/api/onboarding/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data, county }),
+        body: JSON.stringify({ data, county, memoryEnabled: memoryOn }),
       });
       if (!res.ok) throw new Error();
       window.location.assign("/dashboard");
@@ -153,6 +155,42 @@ export default function OnboardingPage() {
         ) : null}
 
         {step === 3 ? (
+          <Card className="space-y-5">
+            <h1 className="text-2xl tracking-tight">Should Compass remember?</h1>
+            <p className="text-muted">
+              With memory on, Compass keeps a few details between visits — your
+              situation, household, and the programs you&rsquo;re pursuing — so
+              you don&rsquo;t start over each time.
+            </p>
+            <div className="flex items-center justify-between rounded-md border border-border bg-surface-2 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-fg">Long-term memory</p>
+                <p className="text-sm text-muted">
+                  You can change this anytime in Settings.
+                </p>
+              </div>
+              <Toggle
+                checked={memoryOn}
+                onChange={setMemoryOn}
+                label="Long-term memory"
+              />
+            </div>
+            <p className="text-sm text-subtle">
+              Compass never remembers your name, date of birth, or any ID numbers
+              — only what helps it pick up where you left off.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={back}>
+                Back
+              </Button>
+              <Button onClick={next} className="flex-1 justify-center">
+                Continue
+              </Button>
+            </div>
+          </Card>
+        ) : null}
+
+        {step === 4 ? (
           <Card className="space-y-4">
             <h1 className="text-2xl tracking-tight">Where do you live?</h1>
             <p className="text-muted">
