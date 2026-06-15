@@ -1,0 +1,7 @@
+# Code owners for Compass.
+#
+# Combined with branch protection on `main` (require a pull request + code-owner
+# review before merging), this means contributors other than the owner cannot
+# push to `main` directly: they open a pull request, which requires @aaravjaichand's
+# review to merge. The owner retains admin bypass for direct pushes.
+* @aaravjaichand
