@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/server";
 import { getProfile } from "@/lib/db/queries";
-import { AppSidebar } from "@/components/AppSidebar";
+import { FloatingNav } from "@/components/FloatingNav";
 import { SiteFooter } from "@/components/SiteFooter";
 
 // Session + profile depend on cookies, so this shell must render dynamically.
@@ -19,13 +19,13 @@ export default async function AppLayout({
   const profile = await getProfile(user.id);
   if (!profile?.onboardingComplete) redirect("/onboarding");
 
+  // No sidebar: each section uses the full screen, and the floating pill
+  // (FloatingNav) is the only persistent navigation chrome.
   return (
-    <div className="flex min-h-screen">
-      <AppSidebar email={user.email ?? ""} />
-      <div className="flex min-h-screen flex-1 flex-col">
-        <div className="flex-1">{children}</div>
-        <SiteFooter />
-      </div>
+    <div className="flex min-h-screen flex-col">
+      <main className="flex-1">{children}</main>
+      <SiteFooter />
+      <FloatingNav />
     </div>
   );
 }
