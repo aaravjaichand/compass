@@ -9,7 +9,7 @@ import {
   profiles,
   programStatus,
 } from "./schema";
-import { decryptJson, encrypt, encryptJson } from "@/lib/crypto";
+import { decrypt, decryptJson, encrypt, encryptJson } from "@/lib/crypto";
 import { getProgramById } from "@/lib/directory/search";
 import type { ActionPlan } from "@/lib/agent/schema";
 import type { PacketSpec } from "@/lib/packet/schema";
@@ -310,4 +310,104 @@ export async function listProgramStatus(userId: string, planId: string) {
       and(eq(programStatus.planId, planId), eq(programStatus.userId, userId)),
     )
     .orderBy(desc(programStatus.changedAt));
+}
+
+// ----------------------------------------------------- data management
+
+/** Delete a saved assessment: the plan (cascades packets + status) and its conversation (cascades messages). */
+export async function deletePlan(userId: string, planId: string): Promise<void> {
+  const db = getDb();
+  const [row] = await db
+    .select({ id: plans.id, conversationId: plans.conversationId })
+    .from(plans)
+    .where(and(eq(plans.id, planId), eq(plans.userId, userId)))
+    .limit(1);
+  if (!row) throw new Error("Plan not found");
+  await db.delete(plans).where(eq(plans.id, planId));
+  if (row.conversationId) {
+    await db
+      .delete(conversations)
+      .where(
+        and(
+          eq(conversations.id, row.conversationId),
+          eq(conversations.userId, userId),
+        ),
+      );
+  }
+}
+
+/** Purge every row we hold for a user (used on account deletion). */
+export async function deleteAllUserData(userId: string): Promise<void> {
+  const db = getDb();
+  await db.delete(programStatus).where(eq(programStatus.userId, userId));
+  await db.delete(packets).where(eq(packets.userId, userId));
+  await db.delete(plans).where(eq(plans.userId, userId));
+  await db.delete(messages).where(eq(messages.userId, userId));
+  await db.delete(conversations).where(eq(conversations.userId, userId));
+  await db.delete(profiles).where(eq(profiles.userId, userId));
+}
+
+/** A user's full data, decrypted, for the "export my data" download. */
+export async function exportUserData(userId: string) {
+  const db = getDb();
+  const profile = await getProfile(userId);
+  const convos = await db
+    .select()
+    .from(conversations)
+    .where(eq(conversations.userId, userId));
+  const msgs = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.userId, userId));
+  const planRows = await db.select().from(plans).where(eq(plans.userId, userId));
+  const packetRows = await db
+    .select()
+    .from(packets)
+    .where(eq(packets.userId, userId));
+  const statusRows = await db
+    .select()
+    .from(programStatus)
+    .where(eq(programStatus.userId, userId));
+
+  return {
+    profile,
+    conversations: convos.map((c) => ({
+      id: c.id,
+      title: c.title,
+      status: c.status,
+      situationSummary: c.situationSummary,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+    })),
+    messages: msgs.map((m) => ({
+      id: m.id,
+      conversationId: m.conversationId,
+      role: m.role,
+      content: m.encContent ? decrypt(m.encContent) : null,
+      parts: m.partsJson,
+      seq: m.seq,
+      createdAt: m.createdAt,
+    })),
+    plans: planRows.map((p) => ({
+      id: p.id,
+      conversationId: p.conversationId,
+      status: p.status,
+      plan: p.planJson,
+      createdAt: p.createdAt,
+    })),
+    packets: packetRows.map((p) => ({
+      id: p.id,
+      planId: p.planId,
+      programIds: p.programIds,
+      ...decryptJson<{ intakeAnswers: Record<string, string>; coverLetter: string }>(
+        p.encPacket,
+      ),
+    })),
+    programStatus: statusRows.map((s) => ({
+      planId: s.planId,
+      programId: s.programId,
+      status: s.status,
+      changedAt: s.changedAt,
+    })),
+  };
 }

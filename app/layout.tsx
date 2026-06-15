@@ -33,6 +33,13 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap"
           rel="stylesheet"
         />
+        {/* Apply the saved theme before paint to avoid a flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('compass-theme');var d=t==='dark'||((!t||t==='system')&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){}})();",
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>

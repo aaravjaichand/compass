@@ -1,5 +1,5 @@
 import { getCurrentUser } from "@/lib/auth/server";
-import { getPlanById, listProgramStatus } from "@/lib/db/queries";
+import { deletePlan, getPlanById, listProgramStatus } from "@/lib/db/queries";
 
 export const runtime = "nodejs";
 
@@ -16,4 +16,20 @@ export async function GET(
 
   const status = await listProgramStatus(user.id, id);
   return Response.json({ plan, status });
+}
+
+export async function DELETE(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const user = await getCurrentUser();
+  if (!user) return new Response("Unauthorized", { status: 401 });
+
+  const { id } = await ctx.params;
+  try {
+    await deletePlan(user.id, id);
+  } catch {
+    return new Response("Not found", { status: 404 });
+  }
+  return Response.json({ ok: true });
 }
