@@ -17,6 +17,29 @@ import type { StreamWriter } from "./stream";
  */
 export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-120b";
 
+/**
+ * gpt-oss models sometimes double-escape control chars in tool-call JSON, so a
+ * multi-line field like `draftedEmail` arrives with the literal two characters
+ * `\n` instead of a real line break. Un-escape them across every string in the
+ * payload. No-op on already-correct strings (real newlines aren't matched).
+ */
+function unescapeDeep<T>(value: T): T {
+  if (typeof value === "string") {
+    return value
+      .replace(/\\r\\n/g, "\n")
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\n")
+      .replace(/\\t/g, "\t") as unknown as T;
+  }
+  if (Array.isArray(value)) return value.map(unescapeDeep) as unknown as T;
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) out[k] = unescapeDeep(v);
+    return out as T;
+  }
+  return value;
+}
+
 const categoryEnum = z.enum([
   "food",
   "utility",
@@ -134,7 +157,10 @@ export async function runGroqAgent(opts: {
       case "tool-call":
         flushText(); // flush any preamble text before the tool step renders
         if (part.toolName === "present_action_plan") {
-          opts.writer.write({ type: opts.terminalPartType, data: part.input });
+          opts.writer.write({
+            type: opts.terminalPartType,
+            data: unescapeDeep(part.input),
+          });
         } else {
           pending.set(part.toolCallId, {
             name: part.toolName,
