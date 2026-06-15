@@ -22,12 +22,13 @@ import {
   timestamp,
 } from "drizzle-orm/pg-core";
 
-const created = timestamp("created_at", { withTimezone: true })
+const created = timestamp("created_at", { withTimezone: true, mode: "date" })
   .notNull()
   .defaultNow();
-const updated = timestamp("updated_at", { withTimezone: true })
+const updated = timestamp("updated_at", { withTimezone: true, mode: "date" })
   .notNull()
-  .defaultNow();
+  .defaultNow()
+  .$onUpdate(() => new Date());
 
 /** One row per user: the reusable profile + app preferences. */
 export const profiles = pgTable("profiles", {
@@ -108,7 +109,7 @@ export const programStatus = pgTable("program_status", {
   programId: text("program_id").notNull(),
   // 'not_started' | 'gathering_docs' | 'submitted' | 'approved' | 'denied'
   status: text("status").notNull(),
-  changedAt: timestamp("changed_at", { withTimezone: true })
+  changedAt: timestamp("changed_at", { withTimezone: true, mode: "date" })
     .notNull()
     .defaultNow(),
 });
