@@ -15,7 +15,9 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getCurrentUser } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// The agent runs in a Vercel Sandbox (install + multi-turn reasoning), which
+// exceeds 60s. Requires Fluid Compute enabled; the effective cap is the plan's.
+export const maxDuration = 300;
 
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 const MAX_BODY_CHARS = 24_000;

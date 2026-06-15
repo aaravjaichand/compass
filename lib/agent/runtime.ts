@@ -33,8 +33,17 @@ async function runAgentInSandbox(opts: RunAgentStreamOptions): Promise<void> {
   const { Sandbox } = await import("@vercel/sandbox");
   const runner = readFileSync(join(process.cwd(), RUNNER_PATH));
 
+  // A prebuilt snapshot (created by scripts/create-sandbox-snapshot.mjs) already
+  // has the Agent SDK installed, so we skip the ~30s per-request npm install.
+  const snapshotId = process.env.AGENT_SANDBOX_SNAPSHOT_ID;
+
   // On Vercel, VERCEL_OIDC_TOKEN is injected automatically and read by the SDK.
-  const sandbox = await Sandbox.create({ runtime: "node24", timeout: 240_000 });
+  const sandbox = snapshotId
+    ? await Sandbox.create({
+        source: { type: "snapshot", snapshotId },
+        timeout: 240_000,
+      })
+    : await Sandbox.create({ runtime: "node24", timeout: 240_000 });
   try {
     await sandbox.writeFiles([
       { path: "entry.mjs", content: Buffer.from(runner) },
@@ -53,11 +62,13 @@ async function runAgentInSandbox(opts: RunAgentStreamOptions): Promise<void> {
       },
     ]);
 
-    // The Agent SDK bundles a native binary, so it must be installed in the VM.
-    await sandbox.runCommand({
-      cmd: "npm",
-      args: ["install", "--no-save", "@anthropic-ai/claude-agent-sdk", "zod"],
-    });
+    // Without a snapshot, install the SDK (native binary) into the fresh VM.
+    if (!snapshotId) {
+      await sandbox.runCommand({
+        cmd: "npm",
+        args: ["install", "--no-save", "@anthropic-ai/claude-agent-sdk", "zod"],
+      });
+    }
 
     const env: Record<string, string> = {};
     if (process.env.ANTHROPIC_API_KEY)
