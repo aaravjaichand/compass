@@ -30,7 +30,8 @@
       "address": "Apply online at dcaid.dca.nj.gov; Hudson County in-person help at PACO, 390 Manila Ave",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07302"
+      "zip": "07302",
+      "geo": { "lat": 40.7256, "lng": -74.044 }
     },
     "hours": "Online 24/7; statewide line Mon–Fri 8:30am–4:30pm",
     "contact": {
@@ -72,7 +73,8 @@
       "address": "257 Cornelison Ave",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07302"
+      "zip": "07302",
+      "geo": { "lat": 40.7196, "lng": -74.0556 }
     },
     "hours": "Mon–Fri 8:30am–4:15pm; apply online anytime",
     "contact": {
@@ -113,7 +115,8 @@
       "address": "1 Jackson Square",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07305"
+      "zip": "07305",
+      "geo": { "lat": 40.7079, "lng": -74.0786 }
     },
     "hours": "Mon–Fri 7:30am–4:00pm (plus some Saturdays)",
     "contact": {
@@ -150,7 +153,8 @@
       "address": "247 Old Bergen Road",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07305"
+      "zip": "07305",
+      "geo": { "lat": 40.6961, "lng": -74.0855 }
     },
     "hours": "3rd Saturday of each month, 10:00am–12:00pm",
     "contact": {
@@ -229,7 +233,8 @@
       "address": "257 Cornelison Ave",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07302"
+      "zip": "07302",
+      "geo": { "lat": 40.7196, "lng": -74.0556 }
     },
     "hours": "Mon–Fri 8:30am–4:15pm",
     "contact": {
@@ -269,7 +274,8 @@
       "address": "Urban League of Hudson County, 253 Martin Luther King Jr. Dr",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07305"
+      "zip": "07305",
+      "geo": { "lat": 40.7068, "lng": -74.0823 }
     },
     "hours": "Mon–Fri 8:30am–4:30pm",
     "contact": {
@@ -307,7 +313,8 @@
     "location": {
       "address": "Call for the office nearest you",
       "city": "Union City",
-      "county": "Hudson"
+      "county": "Hudson",
+      "geo": { "lat": 40.769, "lng": -74.027 }
     },
     "hours": "Mon–Fri 9:00am–5:00pm",
     "contact": {
@@ -345,7 +352,8 @@
       "address": "574 Summit Ave",
       "city": "Jersey City",
       "county": "Hudson",
-      "zip": "07306"
+      "zip": "07306",
+      "geo": { "lat": 40.7306, "lng": -74.0639 }
     },
     "hours": "Mon–Fri 9:00am–5:00pm",
     "contact": {
@@ -415,7 +423,8 @@
       "address": "218 Route 17 North",
       "city": "Rochelle Park",
       "county": "Bergen",
-      "zip": "07662"
+      "zip": "07662",
+      "geo": { "lat": 40.9065, "lng": -74.0775 }
     },
     "hours": "Mon–Fri 8:00am–4:00pm",
     "contact": {
@@ -451,7 +460,8 @@
       "address": "192 West Demarest Ave",
       "city": "Englewood",
       "county": "Bergen",
-      "zip": "07631"
+      "zip": "07631",
+      "geo": { "lat": 40.892, "lng": -73.9745 }
     },
     "hours": "Office Mon–Fri 8:30am–4:30pm; food distribution Mon–Fri 10:00–11:30am",
     "contact": {

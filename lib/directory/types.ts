@@ -37,6 +37,8 @@ export type ProgramRecord = {
     city: string;
     county: County;
     zip?: string;
+    /** Approximate coordinates for the "Help near you" map. */
+    geo?: { lat: number; lng: number };
   };
   hours?: string;
   contact: {

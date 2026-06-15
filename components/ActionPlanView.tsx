@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { StatusDot, type Tone } from "@/components/ui/StatusDot";
 import { cn } from "@/lib/cn";
 import { getProgramById } from "@/lib/directory/search";
+import { HelpMap, type MapPoint } from "@/components/HelpMap";
 import type { ActionPlan, PlanMatch } from "@/lib/agent/schema";
 
 export type Lang = "en" | "es";
@@ -101,6 +102,9 @@ const T: Record<Lang, Record<string, string>> = {
     planHeading: "A path you can act on today",
     print: "Print / Save as PDF",
     pleaseNote: "PLEASE NOTE",
+    helpNearYou: "Help near you",
+    helpNearYouSub:
+      "The offices and pantries matched to you — tap a point for hours and directions.",
     footer:
       "Compass prepared this packet. Nothing has been sent. You decide and file.",
   },
@@ -127,10 +131,38 @@ const T: Record<Lang, Record<string, string>> = {
     planHeading: "Un camino que puedes seguir hoy",
     print: "Imprimir / Guardar como PDF",
     pleaseNote: "TEN EN CUENTA",
+    helpNearYou: "Ayuda cerca de ti",
+    helpNearYouSub:
+      "Las oficinas y despensas que te corresponden — toca un punto para ver el horario y cómo llegar.",
     footer:
       "Compass preparó este paquete. No se ha enviado nada. Tú decides y lo presentas.",
   },
 };
+
+/** Resolve matched programs that have coordinates into points for the map. */
+function mapPointsFor(matches: PlanMatch[]): MapPoint[] {
+  const seen = new Set<string>();
+  const points: MapPoint[] = [];
+  for (const m of matches) {
+    const p = getProgramById(m.programId);
+    if (!p || !p.location.geo || seen.has(p.id)) continue;
+    seen.add(p.id);
+    const { address, city, county, zip } = p.location;
+    points.push({
+      id: p.id,
+      name: p.name,
+      org: p.org,
+      hours: p.hours,
+      phone: p.contact.phone,
+      address: [address, city, `${county} County`, zip, "NJ"]
+        .filter(Boolean)
+        .join(", "),
+      lat: p.location.geo.lat,
+      lng: p.location.geo.lng,
+    });
+  }
+  return points;
+}
 
 function MatchCard({ match, lang }: { match: PlanMatch; lang: Lang }) {
   const program = getProgramById(match.programId);
@@ -292,6 +324,7 @@ export function ActionPlanView({
   const matches = plan.matches ?? [];
   const flags = plan.flags ?? [];
   const t = T[lang];
+  const mapPoints = mapPointsFor(matches);
 
   return (
     <section className="space-y-5">
@@ -344,6 +377,16 @@ export function ActionPlanView({
           <MatchCard key={`${match.programId}-${i}`} match={match} lang={lang} />
         ))}
       </div>
+
+      {mapPoints.length > 0 ? (
+        <Card className="print:hidden">
+          <h3 className="text-base font-medium">{t.helpNearYou}</h3>
+          <p className="mt-1 text-sm text-muted">{t.helpNearYouSub}</p>
+          <div className="mt-4">
+            <HelpMap points={mapPoints} lang={lang} />
+          </div>
+        </Card>
+      ) : null}
 
       <Checklist items={plan.checklist ?? []} lang={lang} />
       <DraftedEmail email={plan.draftedEmail ?? ""} lang={lang} />
