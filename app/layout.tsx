@@ -5,7 +5,7 @@ import "./globals.css";
 const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  variable: "--font-mono",
+  variable: "--font-ibm-plex-mono",
   display: "swap",
 });
 

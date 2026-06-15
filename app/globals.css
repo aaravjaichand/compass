@@ -1,9 +1,102 @@
 @import "tailwindcss";
 
+/* Design tokens — values owned by .private/UI.md. Theme switches via [data-theme]. */
 :root {
-  --font-sans: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --border: #e7e7e7;
+  --border-strong: #d4d4d4;
+  --text: #0a0a0a;
+  --text-muted: #6e6e6e;
+  --text-subtle: #9a9a9a;
+  --primary: #0a0a0a;
+  --primary-foreground: #ffffff;
+  --accent: #2347d9;
+  --ring: #2347d9;
+  --success: #15803d;
+  --warning: #b45309;
+  --danger: #c81e1e;
 }
 
-html {
-  font-family: var(--font-sans);
+[data-theme="dark"] {
+  --bg: #0b0b0c;
+  --surface: #161617;
+  --surface-2: #1e1e20;
+  --border: #2a2a2c;
+  --border-strong: #3a3a3d;
+  --text: #f5f5f4;
+  --text-muted: #a0a0a0;
+  --text-subtle: #6f6f6f;
+  --primary: #f5f5f4;
+  --primary-foreground: #0a0a0a;
+  --accent: #5b7cfa;
+  --ring: #5b7cfa;
+  --success: #2fae5e;
+  --warning: #d08a2c;
+  --danger: #f05252;
+}
+
+/* Static design scale (emits CSS vars + Tailwind utilities). */
+@theme {
+  --font-sans: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, monospace;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+/* Themed colors — inline so utilities track the live [data-theme] variables. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+}
+
+@layer base {
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.2;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
