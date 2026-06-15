@@ -1,4 +1,5 @@
-import { auth } from "@/lib/auth/server";
+import { type NextRequest } from "next/server";
+import { getAuth } from "@/lib/auth/server";
 
 /**
  * Full auth gate (Next.js 16 "proxy" convention). Neon Auth's middleware
@@ -6,10 +7,13 @@ import { auth } from "@/lib/auth/server";
  *
  * The matcher lists only the protected page areas — the marketing landing (`/`),
  * the auth screens (`/sign-in`, `/sign-up`), and `/api/*` are intentionally not
- * matched. API routes self-enforce via getCurrentUser() and return 401 (so a
- * fetch gets a clean 401, not an HTML redirect).
+ * matched. API routes self-enforce via getCurrentUser() and return 401.
+ *
+ * getAuth() is lazy, so the build never needs the runtime cookie secret.
  */
-export default auth.middleware({ loginUrl: "/sign-in" });
+export default function proxy(req: NextRequest) {
+  return getAuth().middleware({ loginUrl: "/sign-in" })(req);
+}
 
 export const config = {
   matcher: [

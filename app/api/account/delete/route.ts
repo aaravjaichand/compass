@@ -1,4 +1,4 @@
-import { auth, getCurrentUser } from "@/lib/auth/server";
+import { getAuth, getCurrentUser } from "@/lib/auth/server";
 import { deleteAllUserData } from "@/lib/db/queries";
 
 export const runtime = "nodejs";
@@ -11,7 +11,7 @@ export async function POST() {
   await deleteAllUserData(user.id);
 
   try {
-    await auth.deleteUser();
+    await getAuth().deleteUser();
   } catch {
     // App data is already gone; surface a soft error so the user can retry the
     // account removal if the auth call failed.
