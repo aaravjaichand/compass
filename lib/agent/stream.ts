@@ -20,7 +20,7 @@ export function todayInET(): string {
 
 /** Minimal surface of the `ai` stream writer the loop needs. Method syntax keeps
  * the parameter bivariant so the concrete `ai` writer stays assignable. */
-type StreamWriter = { write(part: Record<string, unknown>): void };
+export type StreamWriter = { write(part: Record<string, unknown>): void };
 
 /** Flatten the useChat conversation into a role-labeled transcript prompt. */
 export function buildPrompt(messages: UIMessage[]): string {
@@ -93,13 +93,97 @@ export type RunAgentStreamOptions = {
  * payload is the terminal tool's input (e.g. present_action_plan -> data-plan,
  * assemble_packet -> data-packet).
  */
-export async function runAgentStream(opts: RunAgentStreamOptions): Promise<void> {
-  const { writer, terminalToolName, terminalPartType } = opts;
-  // Correlate tool_use ids to their inputs so each step can be emitted with its
-  // result count when the tool_result comes back.
-  const pending = new Map<string, { name: string; input: unknown }>();
-  let noteId = 0;
+/** Mutable state for correlating tool calls/results across one agent run. */
+export type TranslateCtx = {
+  pending: Map<string, { name: string; input: unknown }>;
+  noteId: number;
+  terminalToolName: string;
+  terminalPartType: string;
+};
 
+export function createTranslateCtx(
+  terminalToolName: string,
+  terminalPartType: string,
+): TranslateCtx {
+  return { pending: new Map(), noteId: 0, terminalToolName, terminalPartType };
+}
+
+type SdkMessage = { type?: string; message?: { content?: unknown } };
+
+/**
+ * Translate one Agent SDK message into the UI part types the client renders.
+ * Shared by both backends (in-process query() and the Vercel Sandbox runner,
+ * whose NDJSON lines parse into the same message shape) so the client renders
+ * identically regardless of where the agent ran.
+ */
+export function translateSdkMessage(
+  message: SdkMessage,
+  ctx: TranslateCtx,
+  writer: StreamWriter,
+): void {
+  if (message.type === "assistant") {
+    const blocks = (message.message?.content ?? []) as unknown as Block[];
+    for (const block of blocks) {
+      if (
+        block.type === "text" &&
+        typeof block.text === "string" &&
+        block.text.trim()
+      ) {
+        writer.write({
+          type: "data-note",
+          id: `note-${ctx.noteId++}`,
+          data: { text: block.text },
+        });
+      } else if (block.type === "tool_use") {
+        const short = String(block.name ?? "").replace(/^mcp__[a-z0-9-]+__/i, "");
+        if (short === ctx.terminalToolName) {
+          writer.write({ type: ctx.terminalPartType, data: block.input });
+        } else {
+          ctx.pending.set(String(block.id), { name: short, input: block.input });
+        }
+      }
+    }
+  } else if (message.type === "user") {
+    const blocks = (message.message?.content ?? []) as unknown as Block[];
+    for (const block of blocks) {
+      if (block.type === "tool_result") {
+        const ref = ctx.pending.get(String(block.tool_use_id));
+        if (ref) {
+          writer.write({
+            type: "data-step",
+            id: String(block.tool_use_id),
+            data: {
+              name: ref.name,
+              input: ref.input,
+              count: resultCount(block.content),
+            },
+          });
+        }
+      }
+    }
+  }
+}
+
+/** Parse + translate one NDJSON line from the sandbox runner's stdout. */
+export function translateNdjsonLine(
+  line: string,
+  ctx: TranslateCtx,
+  writer: StreamWriter,
+): void {
+  const trimmed = line.trim();
+  if (!trimmed) return;
+  let msg: SdkMessage;
+  try {
+    msg = JSON.parse(trimmed) as SdkMessage;
+  } catch {
+    return;
+  }
+  translateSdkMessage(msg, ctx, writer);
+}
+
+/** In-process backend: drive the Agent SDK locally (default for dev). */
+export async function runAgentStream(opts: RunAgentStreamOptions): Promise<void> {
+  const ctx = createTranslateCtx(opts.terminalToolName, opts.terminalPartType);
   for await (const message of query({
     prompt: opts.prompt,
     options: {
@@ -115,46 +199,6 @@ export async function runAgentStream(opts: RunAgentStreamOptions): Promise<void>
       maxTurns: opts.maxTurns ?? 12,
     },
   })) {
-    if (message.type === "assistant") {
-      const blocks = (message.message.content ?? []) as unknown as Block[];
-      for (const block of blocks) {
-        if (
-          block.type === "text" &&
-          typeof block.text === "string" &&
-          block.text.trim()
-        ) {
-          writer.write({
-            type: "data-note",
-            id: `note-${noteId++}`,
-            data: { text: block.text },
-          });
-        } else if (block.type === "tool_use") {
-          const short = String(block.name ?? "").replace(/^mcp__[a-z0-9-]+__/i, "");
-          if (short === terminalToolName) {
-            writer.write({ type: terminalPartType, data: block.input });
-          } else {
-            pending.set(String(block.id), { name: short, input: block.input });
-          }
-        }
-      }
-    } else if (message.type === "user") {
-      const blocks = (message.message.content ?? []) as unknown as Block[];
-      for (const block of blocks) {
-        if (block.type === "tool_result") {
-          const ref = pending.get(String(block.tool_use_id));
-          if (ref) {
-            writer.write({
-              type: "data-step",
-              id: String(block.tool_use_id),
-              data: {
-                name: ref.name,
-                input: ref.input,
-                count: resultCount(block.content),
-              },
-            });
-          }
-        }
-      }
-    }
+    translateSdkMessage(message as SdkMessage, ctx, opts.writer);
   }
 }

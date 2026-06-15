@@ -35,5 +35,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# generated sandbox agent runner bundle (rebuilt by prebuild)
+/lib/agent/runner/dist/
+
 # private collaborator notes (separate PRIVATE repo cloned here; never committed to this public repo)
 /.private/

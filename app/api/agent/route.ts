@@ -9,7 +9,8 @@ import { join } from "node:path";
 import { z } from "zod";
 import { SYSTEM_PROMPT } from "@/lib/agent/prompt";
 import { ALLOWED_TOOLS, DISALLOWED_TOOLS, compassServer } from "@/lib/agent/tools";
-import { buildPrompt, runAgentStream, todayInET } from "@/lib/agent/stream";
+import { buildPrompt, todayInET } from "@/lib/agent/stream";
+import { runAgent } from "@/lib/agent/runtime";
 import { rateLimit } from "@/lib/rate-limit";
 import { getCurrentUser } from "@/lib/auth/server";
 
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
       return "Something went wrong reaching the assistant. Please try again in a moment.";
     },
     execute: async ({ writer }) => {
-      await runAgentStream({
+      await runAgent({
         writer,
         prompt,
         systemPrompt: `Today's date is ${todayInET()} (Eastern Time).\n\n${SYSTEM_PROMPT}`,
