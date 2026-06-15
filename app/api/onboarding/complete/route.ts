@@ -7,6 +7,7 @@ export const runtime = "nodejs";
 const bodySchema = z.object({
   data: z.record(z.string(), z.string()).optional(),
   county: z.string().optional(),
+  memoryEnabled: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {

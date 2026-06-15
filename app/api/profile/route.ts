@@ -15,6 +15,7 @@ export async function GET() {
       county: null,
       onboardingComplete: false,
       theme: "system",
+      memoryEnabled: false,
     },
   });
 }
@@ -24,6 +25,7 @@ const bodySchema = z.object({
   county: z.string().optional(),
   theme: z.enum(["light", "dark", "system"]).optional(),
   onboardingComplete: z.boolean().optional(),
+  memoryEnabled: z.boolean().optional(),
 });
 
 export async function POST(req: Request) {
