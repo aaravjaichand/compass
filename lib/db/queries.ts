@@ -1,4 +1,5 @@
 import "server-only";
+import { randomBytes } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "./index";
 import {
@@ -8,6 +9,7 @@ import {
   plans,
   profiles,
   programStatus,
+  sharedPlans,
 } from "./schema";
 import { decrypt, decryptJson, encrypt, encryptJson } from "@/lib/crypto";
 import { getProgramById } from "@/lib/directory/search";
@@ -229,6 +231,33 @@ export async function getPlanById(userId: string, planId: string) {
     .where(and(eq(plans.id, planId), eq(plans.userId, userId)))
     .limit(1);
   return row ?? null;
+}
+
+// ---------------------------------------------------------- shared plans
+
+/** Store a read-only plan snapshot for hand-off and return its share token. */
+export async function createSharedPlan(
+  plan: ActionPlan,
+  lang: string,
+): Promise<string> {
+  const db = getDb();
+  const token = randomBytes(16).toString("hex");
+  await db.insert(sharedPlans).values({ token, planJson: plan, lang });
+  return token;
+}
+
+/** Fetch a shared plan by its token (public, no ownership check). */
+export async function getSharedPlan(
+  token: string,
+): Promise<{ plan: ActionPlan; lang: string } | null> {
+  const db = getDb();
+  const [row] = await db
+    .select()
+    .from(sharedPlans)
+    .where(eq(sharedPlans.token, token))
+    .limit(1);
+  if (!row) return null;
+  return { plan: row.planJson as ActionPlan, lang: row.lang };
 }
 
 // -------------------------------------------------------------- packets

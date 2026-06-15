@@ -114,9 +114,26 @@ export const programStatus = pgTable("program_status", {
     .defaultNow(),
 });
 
+/**
+ * A publicly-shareable, read-only snapshot of a plan, so a person can hand it
+ * off to a helper (family, friend, caseworker). Intentionally has NO user_id and
+ * needs no auth — the stored ActionPlan is non-PII (the draftedEmail is bracketed,
+ * the situationSummary is a restatement), and it powers the guest `/try` demo too.
+ */
+export const sharedPlans = pgTable("shared_plans", {
+  /** Unguessable random token (the share URL slug). */
+  token: text("token").primaryKey(),
+  /** Plaintext: full ActionPlan (lib/agent/schema.ts), non-PII. */
+  planJson: jsonb("plan_json").notNull(),
+  /** 'en' | 'es' — the language the plan content was written in. */
+  lang: text("lang").notNull().default("en"),
+  createdAt: created,
+});
+
 export type Profile = typeof profiles.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Plan = typeof plans.$inferSelect;
 export type Packet = typeof packets.$inferSelect;
 export type ProgramStatus = typeof programStatus.$inferSelect;
+export type SharedPlan = typeof sharedPlans.$inferSelect;

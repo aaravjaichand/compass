@@ -10,6 +10,7 @@ import { PreparePacketCTA } from "@/components/PreparePacketCTA";
 import { ReasoningTrace, type TracePart } from "@/components/ReasoningTrace";
 import { WorkingIndicator } from "@/components/WorkingIndicator";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { Textarea } from "@/components/ui/Textarea";
 import { cn } from "@/lib/cn";
 import type { ActionPlan } from "@/lib/agent/schema";
@@ -41,6 +42,13 @@ const UI: Record<Lang, Record<string, string>> = {
     tryExample: "Not sure where to start? Try Marisol's example.",
     error: "Something went wrong reaching the assistant. Please try again.",
     ariaDescribe: "Describe your situation",
+    shareTitle: "Get help from someone you trust",
+    shareSub:
+      "Create a private link to this plan and send it to a family member, friend, or caseworker who can help you file. Nothing is ever submitted.",
+    shareCreate: "Create a share link",
+    shareCreating: "Creating…",
+    shareCopy: "Copy link",
+    shareCopied: "Copied",
   },
   es: {
     eyebrow: "DESCRIBE TU SITUACIÓN",
@@ -55,6 +63,13 @@ const UI: Record<Lang, Record<string, string>> = {
     tryExample: "¿No sabes por dónde empezar? Prueba el ejemplo de Marisol.",
     error: "Algo salió mal al contactar al asistente. Inténtalo de nuevo.",
     ariaDescribe: "Describe tu situación",
+    shareTitle: "Pide ayuda a alguien de confianza",
+    shareSub:
+      "Crea un enlace privado a este plan y envíalo a un familiar, amigo o trabajador social que pueda ayudarte a presentarlo. Nunca se envía nada.",
+    shareCreate: "Crear enlace para compartir",
+    shareCreating: "Creando…",
+    shareCopy: "Copiar enlace",
+    shareCopied: "Copiado",
   },
 };
 
@@ -104,6 +119,11 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
   const conversationId = useRef<string | null>(null);
   const savedSignature = useRef<string>("");
   const [planId, setPlanId] = useState<string | null>(null);
+
+  // Share / hand-off: a public read-only link to the current plan.
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const busy = status === "submitted" || status === "streaming";
   const started = messages.length > 0;
@@ -211,6 +231,38 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
     setInput("");
   }
 
+  // Mint a public, read-only link to the current plan to hand off to a helper.
+  async function share() {
+    if (!plan || sharing) return;
+    setSharing(true);
+    try {
+      const r = await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan, lang: language }),
+      });
+      if (r.ok) {
+        const { token } = await r.json();
+        setShareUrl(`${window.location.origin}/share/${token}`);
+      }
+    } catch {
+      /* surfaced as a no-op; the button stays available to retry */
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function copyShare() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — the link is still visible to copy manually */
+    }
+  }
+
   // Move from plan to packet: prefill required fields from the profile and fill
   // the cover letter locally from the agent's bracketed draft.
   function startPacket() {
@@ -310,6 +362,38 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
             spec={packetSpec}
             planId={planId}
           />
+        ) : null}
+
+        {/* Hand-off: a public read-only link a helper can open. Works for guests. */}
+        {plan ? (
+          <Card className="print:hidden">
+            <h3 className="text-base font-medium">{ui.shareTitle}</h3>
+            <p className="mt-1 text-sm text-muted">{ui.shareSub}</p>
+            {shareUrl ? (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <input
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  aria-label={ui.shareTitle}
+                  className="min-w-0 flex-1 rounded-md border border-border bg-surface-2 px-3 py-2 font-mono text-xs text-fg"
+                />
+                <Button variant="secondary" onClick={copyShare}>
+                  {shareCopied ? ui.shareCopied : ui.shareCopy}
+                </Button>
+              </div>
+            ) : (
+              <div className="mt-4">
+                <Button
+                  variant="secondary"
+                  onClick={share}
+                  disabled={sharing}
+                >
+                  {sharing ? ui.shareCreating : ui.shareCreate}
+                </Button>
+              </div>
+            )}
+          </Card>
         ) : null}
       </div>
 
