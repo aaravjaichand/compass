@@ -1,43 +1,76 @@
 import {
-  convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
-  generateObject,
-  stepCountIs,
-  streamText,
   type UIMessage,
 } from "ai";
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { query } from "@anthropic-ai/claude-agent-sdk";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { z } from "zod";
-import { PLAN_PROMPT, SYSTEM_PROMPT } from "@/lib/agent/prompt";
-import { actionPlanSchema } from "@/lib/agent/schema";
-import { tools } from "@/lib/agent/tools";
+import { SYSTEM_PROMPT } from "@/lib/agent/prompt";
+import { ALLOWED_TOOLS, DISALLOWED_TOOLS, compassServer } from "@/lib/agent/tools";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
-// Swappable, OpenAI-compatible provider — defaults to Groq's free tier.
-// Structured outputs (json_schema) keep the assembled plan strictly on-schema.
-const provider = createOpenAICompatible({
-  name: "compass-llm",
-  baseURL: process.env.LLM_BASE_URL ?? "https://api.groq.com/openai/v1",
-  apiKey: process.env.LLM_API_KEY ?? "",
-  supportsStructuredOutputs: true,
-});
-
-// llama-4-scout drives the tool loop; gpt-oss-120b assembles the structured
-// plan (a single, non-streaming call where it excels at on-schema JSON).
-const DEFAULT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
-const DEFAULT_PLAN_MODEL = "openai/gpt-oss-120b";
+const DEFAULT_MODEL = "claude-opus-4-8";
+const MAX_BODY_CHARS = 24_000;
 
 const bodySchema = z.object({
   messages: z.array(z.unknown()).min(1).max(40),
 });
 
-const MAX_BODY_CHARS = 24_000;
-const STREAM_ERROR =
-  "Something went wrong reaching the assistant. Please try again in a moment.";
+type Block = Record<string, unknown>;
+
+/** Flatten the useChat conversation into a role-labeled transcript prompt. */
+function buildPrompt(messages: UIMessage[]): string {
+  const lines: string[] = [];
+  for (const m of messages) {
+    const parts = (m.parts ?? []) as Array<{
+      type: string;
+      text?: string;
+      data?: unknown;
+    }>;
+    const text =
+      m.role === "user"
+        ? parts
+            .filter((p) => p.type === "text")
+            .map((p) => p.text ?? "")
+            .join("")
+            .trim()
+        : // assistant clarifying questions were stored as data-note parts
+          parts
+            .filter((p) => p.type === "data-note")
+            .map((p) => String((p.data as { text?: string })?.text ?? ""))
+            .join(" ")
+            .trim();
+    if (text) lines.push(`${m.role === "user" ? "User" : "Assistant"}: ${text}`);
+  }
+  return lines.join("\n\n");
+}
+
+/** Number of results in a tool_result payload (for the reasoning trace). */
+function resultCount(content: unknown): number | undefined {
+  try {
+    let text = "";
+    if (typeof content === "string") text = content;
+    else if (Array.isArray(content)) {
+      text = content
+        .map((c) =>
+          c && typeof c === "object" && "text" in c
+            ? String((c as { text: unknown }).text)
+            : "",
+        )
+        .join("");
+    }
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed.length : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export async function POST(req: Request) {
   const ip =
@@ -48,9 +81,9 @@ export async function POST(req: Request) {
     });
   }
 
-  if (!process.env.LLM_API_KEY) {
+  if (!process.env.CLAUDE_CODE_OAUTH_TOKEN && !process.env.ANTHROPIC_API_KEY) {
     return new Response(
-      "The assistant isn't configured yet. Add LLM_API_KEY to run it.",
+      "The assistant isn't configured yet. Set CLAUDE_CODE_OAUTH_TOKEN.",
       { status: 503 },
     );
   }
@@ -74,62 +107,78 @@ export async function POST(req: Request) {
     });
   }
 
-  const model = provider(process.env.LLM_MODEL ?? DEFAULT_MODEL);
-  const modelMessages = await convertToModelMessages(messages);
+  const prompt = buildPrompt(messages);
+  const model = process.env.LLM_MODEL ?? DEFAULT_MODEL;
+  const cwd = mkdtempSync(join(tmpdir(), "compass-"));
 
   const stream = createUIMessageStream({
     onError: (error) => {
-      console.error("[agent] stream error:", error);
-      return STREAM_ERROR;
+      console.error("[agent]", error);
+      return "Something went wrong reaching the assistant. Please try again in a moment.";
     },
     execute: async ({ writer }) => {
-      // 1) Reasoning loop with the simple directory tools — streamed live so
-      //    the client can show the agent's steps.
-      const result = streamText({
-        model,
-        system: SYSTEM_PROMPT,
-        messages: modelMessages,
-        tools,
-        stopWhen: stepCountIs(8),
-      });
-      writer.merge(result.toUIMessageStream());
+      // Correlate tool_use ids to their inputs so each step can be emitted with
+      // its result count when the tool_result comes back.
+      const pending = new Map<string, { name: string; input: unknown }>();
+      let noteId = 0;
 
-      // 2) Collect the programs the agent actually found — this deduped list is
-      //    the only thing the plan may cite (grounding) and a clean context for
-      //    structured generation. If nothing was found, the agent only asked a
-      //    clarifying question; stop and let that stream.
-      const steps = await result.steps;
-      const candidates = new Map<string, unknown>();
-      for (const step of steps) {
-        for (const tr of step.toolResults) {
-          const r = tr as { toolName: string; output: unknown };
-          if (r.toolName === "search_programs" && Array.isArray(r.output)) {
-            for (const prog of r.output as Array<{ id?: string }>) {
-              if (prog?.id) candidates.set(prog.id, prog);
+      for await (const message of query({
+        prompt,
+        options: {
+          model,
+          systemPrompt: SYSTEM_PROMPT,
+          mcpServers: { compass: compassServer },
+          allowedTools: ALLOWED_TOOLS,
+          disallowedTools: DISALLOWED_TOOLS,
+          permissionMode: "dontAsk",
+          // Ignore project/user CLAUDE.md and settings — fully self-contained.
+          settingSources: [],
+          cwd,
+          maxTurns: 12,
+        },
+      })) {
+        if (message.type === "assistant") {
+          const blocks = (message.message.content ?? []) as unknown as Block[];
+          for (const block of blocks) {
+            if (
+              block.type === "text" &&
+              typeof block.text === "string" &&
+              block.text.trim()
+            ) {
+              writer.write({
+                type: "data-note",
+                id: `note-${noteId++}`,
+                data: { text: block.text },
+              });
+            } else if (block.type === "tool_use") {
+              const short = String(block.name ?? "").replace(/^mcp__compass__/, "");
+              if (short === "present_action_plan") {
+                writer.write({ type: "data-plan", data: block.input });
+              } else {
+                pending.set(String(block.id), { name: short, input: block.input });
+              }
+            }
+          }
+        } else if (message.type === "user") {
+          const blocks = (message.message.content ?? []) as unknown as Block[];
+          for (const block of blocks) {
+            if (block.type === "tool_result") {
+              const ref = pending.get(String(block.tool_use_id));
+              if (ref) {
+                writer.write({
+                  type: "data-step",
+                  id: String(block.tool_use_id),
+                  data: {
+                    name: ref.name,
+                    input: ref.input,
+                    count: resultCount(block.content),
+                  },
+                });
+              }
             }
           }
         }
       }
-      if (candidates.size === 0) return;
-
-      // 3) Assemble the grounded plan with structured output.
-      const planModel = provider(process.env.LLM_PLAN_MODEL ?? DEFAULT_PLAN_MODEL);
-      const { object: plan } = await generateObject({
-        model: planModel,
-        schema: actionPlanSchema,
-        system: PLAN_PROMPT,
-        messages: [
-          ...modelMessages,
-          {
-            role: "user",
-            content: `Candidate programs found in the directory. Use ONLY these program ids in the plan:\n${JSON.stringify(
-              [...candidates.values()],
-            )}`,
-          },
-        ],
-      });
-
-      writer.write({ type: "data-plan", data: plan });
     },
   });
 

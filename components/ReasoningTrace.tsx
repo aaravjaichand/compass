@@ -6,56 +6,50 @@ import { getProgramById } from "@/lib/directory/search";
 
 export type TracePart = {
   type: string;
-  state?: string;
-  input?: unknown;
-  output?: unknown;
+  data?: unknown;
 };
 
-type SearchInput = {
-  needs?: string[];
-  keywords?: string;
-  category?: string;
-  county?: string;
+type StepData = {
+  name: string;
+  input?: {
+    needs?: string[];
+    keywords?: string;
+    category?: string;
+    county?: string;
+    programId?: string;
+  };
+  count?: number;
 };
 
-function describe(
-  name: string,
-  input: unknown,
-  output: unknown,
-): { title: string; detail?: string; done: boolean } {
-  if (name === "search_programs") {
-    const i = (input ?? {}) as SearchInput;
+function describe(step: StepData): { title: string; detail?: string } {
+  if (step.name === "search_programs") {
+    const i = step.input ?? {};
     const query = [...(i.needs ?? []), i.keywords, i.category]
       .filter(Boolean)
       .join(", ");
     const county = i.county ? ` in ${i.county} County` : "";
-    const count = Array.isArray(output) ? output.length : undefined;
+    const found = step.count !== undefined ? ` — found ${step.count}` : "";
     return {
       title: "Searched the local directory",
-      detail: `${query || "programs"}${county}${
-        count !== undefined ? ` — found ${count}` : ""
-      }`,
-      done: count !== undefined,
+      detail: `${query || "programs"}${county}${found}`,
     };
   }
 
-  if (name === "get_required_docs") {
-    const programId = (input as { programId?: string } | undefined)?.programId;
-    const program = programId ? getProgramById(programId) : undefined;
+  if (step.name === "get_required_docs") {
+    const program = step.input?.programId
+      ? getProgramById(step.input.programId)
+      : undefined;
     return {
       title: "Checked required documents",
-      detail: program?.name ?? programId,
-      done: output != null,
+      detail: program?.name ?? step.input?.programId,
     };
   }
 
-  return { title: name, done: output != null };
+  return { title: step.name };
 }
 
 export function ReasoningTrace({ parts }: { parts: TracePart[] }) {
-  const steps = parts.filter(
-    (p) => p.type.startsWith("tool-") && p.type !== "tool-present_action_plan",
-  );
+  const steps = parts.filter((p) => p.type === "data-step");
   if (steps.length === 0) return null;
 
   return (
@@ -65,12 +59,11 @@ export function ReasoningTrace({ parts }: { parts: TracePart[] }) {
       </p>
       <ol className="mt-3 space-y-2.5">
         {steps.map((p, i) => {
-          const name = p.type.slice("tool-".length);
-          const { title, detail, done } = describe(name, p.input, p.output);
+          const { title, detail } = describe(p.data as StepData);
           return (
             <li key={i} className="flex items-start gap-3 text-sm">
               <span className="mt-1.5">
-                <StatusDot tone={done ? "success" : "muted"} />
+                <StatusDot tone="success" />
               </span>
               <div>
                 <span className="text-fg">{title}</span>

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import type { ActionPlan } from "@/lib/agent/schema";
 
-type PartLike = TracePart & { text?: string; data?: unknown };
+type PartLike = TracePart & { text?: string };
 
 const MARISOL_EXAMPLE =
   "I live in Jersey City with my two kids, ages 5 and 8. My hours at work were just cut and I'm only bringing in about $1,800 a month now, and I rent my apartment. I just got a notice that my electricity will be shut off next week, and our fridge is almost empty. I don't know where to start or what help I can get.";
@@ -19,6 +19,15 @@ function textOf(parts: PartLike[]): string {
     .filter((p) => p.type === "text")
     .map((p) => p.text ?? "")
     .join("")
+    .trim();
+}
+
+// Assistant text (clarifying questions / notes) arrives as data-note parts.
+function noteOf(parts: PartLike[]): string {
+  return parts
+    .filter((p) => p.type === "data-note")
+    .map((p) => String((p.data as { text?: string })?.text ?? ""))
+    .join("\n")
     .trim();
 }
 
@@ -96,14 +105,14 @@ export default function AssessPage() {
             );
           }
 
-          const text = textOf(parts);
+          const note = noteOf(parts);
           const planPart = parts.find((p) => p.type === "data-plan");
 
           return (
             <div key={m.id} className="space-y-4">
               <ReasoningTrace parts={parts} />
-              {text ? (
-                <p className="whitespace-pre-wrap text-fg print:hidden">{text}</p>
+              {note ? (
+                <p className="whitespace-pre-wrap text-fg print:hidden">{note}</p>
               ) : null}
               {planPart?.data ? (
                 <ActionPlanView plan={planPart.data as ActionPlan} />
