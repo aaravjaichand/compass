@@ -212,6 +212,7 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
         conversationId: conversationId.current,
         transcript,
         plan: plan ?? null,
+        language,
       }),
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -222,7 +223,7 @@ export function AssessExperience({ guest = false }: { guest?: boolean }) {
         }
       })
       .catch(() => {});
-  }, [guest, status, messages, plan]);
+  }, [guest, status, messages, plan, language]);
 
   function submit(text: string) {
     const trimmed = text.trim();

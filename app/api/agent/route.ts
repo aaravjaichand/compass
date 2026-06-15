@@ -12,6 +12,9 @@ import { ALLOWED_TOOLS, DISALLOWED_TOOLS, compassServer } from "@/lib/agent/tool
 import { buildPrompt, todayInET } from "@/lib/agent/stream";
 import { runAgent } from "@/lib/agent/runtime";
 import { GROQ_DEFAULT_MODEL, runGroqAgent } from "@/lib/agent/groq";
+import { getCurrentUser } from "@/lib/auth/server";
+import { isMemoryEnabled } from "@/lib/db/queries";
+import { buildMemoryContext } from "@/lib/memory/recall";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -110,7 +113,26 @@ export async function POST(req: Request) {
     parsed.data.language === "es"
       ? "The person is using Spanish. Write the entire plan and every message in Spanish.\n\n"
       : "";
-  const systemPrompt = `Today's date is ${todayInET()} (Eastern Time).\n\n${languageDirective}${SYSTEM_PROMPT}`;
+
+  // Personalize for a returning, memory-enabled person. Guests (the public /try
+  // demo) have no session, so this resolves to null and the prompt is unchanged.
+  // Best-effort: any auth/db hiccup must never break the assistant.
+  let memoryBlock: string | null = null;
+  try {
+    const user = await getCurrentUser();
+    if (user && (await isMemoryEnabled(user.id))) {
+      memoryBlock = await buildMemoryContext(
+        user.id,
+        parsed.data.language ?? "en",
+      );
+    }
+  } catch (error) {
+    console.error("[agent] memory recall skipped", error);
+  }
+
+  const systemPrompt = `Today's date is ${todayInET()} (Eastern Time).\n\n${languageDirective}${
+    memoryBlock ? `${memoryBlock}\n\n` : ""
+  }${SYSTEM_PROMPT}`;
 
   const stream = createUIMessageStream({
     onError: (error) => {

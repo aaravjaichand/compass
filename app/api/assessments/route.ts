@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/server";
-import { saveAssessmentSnapshot } from "@/lib/db/queries";
+import {
+  isMemoryEnabled,
+  saveAssessmentSnapshot,
+  upsertMemories,
+} from "@/lib/db/queries";
 import { actionPlanSchema } from "@/lib/agent/schema";
+import { extractMemories } from "@/lib/memory/extract";
 
 export const runtime = "nodejs";
 
@@ -17,6 +22,7 @@ const bodySchema = z.object({
     }),
   ),
   plan: actionPlanSchema.nullish(),
+  language: z.enum(["en", "es"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -41,5 +47,24 @@ export async function POST(req: Request) {
     transcript: parsed.data.transcript,
     plan: parsed.data.plan ?? null,
   });
+
+  // Long-term memory: distill a few minimized, durable facts from this session so
+  // a return visit is faster and warmer. Gated on the user's opt-in, only when a
+  // plan exists, and fully best-effort — a failure here must never fail the save.
+  if (parsed.data.plan) {
+    try {
+      if (await isMemoryEnabled(user.id)) {
+        const items = await extractMemories({
+          transcript: parsed.data.transcript,
+          plan: parsed.data.plan,
+          lang: parsed.data.language ?? "en",
+        });
+        await upsertMemories(user.id, items, result.conversationId);
+      }
+    } catch (error) {
+      console.error("[assessments] memory extraction skipped", error);
+    }
+  }
+
   return Response.json(result);
 }
