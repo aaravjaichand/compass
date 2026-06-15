@@ -34,3 +34,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# private collaborator notes (separate PRIVATE repo cloned here; never committed to this public repo)
+/.private/
