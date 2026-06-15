@@ -4,12 +4,20 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionPlanView } from "@/components/ActionPlanView";
+import { IntakeChat } from "@/components/IntakeChat";
+import { Markdown } from "@/components/Markdown";
+import { PacketReview } from "@/components/PacketReview";
+import { PreparePacketCTA } from "@/components/PreparePacketCTA";
 import { ReasoningTrace, type TracePart } from "@/components/ReasoningTrace";
+import { WorkingIndicator } from "@/components/WorkingIndicator";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
 import type { ActionPlan } from "@/lib/agent/schema";
+import type { AssemblePacket } from "@/lib/packet/schema";
+import { getProgramById } from "@/lib/directory/search";
 
 type PartLike = TracePart & { text?: string };
+type PacketPhase = "plan" | "intake" | "review";
 
 const MARISOL_EXAMPLE =
   "I live in Jersey City with my two kids, ages 5 and 8. My hours at work were just cut and I'm only bringing in about $1,800 a month now, and I rent my apartment. I just got a notice that my electricity will be shut off next week, and our fridge is almost empty. I don't know where to start or what help I can get.";
@@ -31,19 +39,6 @@ function noteOf(parts: PartLike[]): string {
     .trim();
 }
 
-function WorkingIndicator() {
-  return (
-    <div className="flex items-center gap-2 text-sm text-muted">
-      <span className="flex gap-1">
-        <span className="size-1.5 animate-pulse rounded-full bg-subtle [animation-delay:0ms]" />
-        <span className="size-1.5 animate-pulse rounded-full bg-subtle [animation-delay:150ms]" />
-        <span className="size-1.5 animate-pulse rounded-full bg-subtle [animation-delay:300ms]" />
-      </span>
-      Compass is working…
-    </div>
-  );
-}
-
 export default function AssessPage() {
   const transport = useMemo(
     () => new DefaultChatTransport({ api: "/api/agent" }),
@@ -53,8 +48,37 @@ export default function AssessPage() {
   const [input, setInput] = useState("");
   const sentExample = useRef(false);
 
+  const [packetPhase, setPacketPhase] = useState<PacketPhase>("plan");
+  const [packetSpec, setPacketSpec] = useState<AssemblePacket | null>(null);
+
   const busy = status === "submitted" || status === "streaming";
   const started = messages.length > 0;
+
+  // The most recent grounded action plan, if one has streamed in.
+  const plan = useMemo<ActionPlan | undefined>(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const part = (messages[i].parts as PartLike[]).find(
+        (p) => p.type === "data-plan",
+      );
+      if (part?.data) return part.data as ActionPlan;
+    }
+    return undefined;
+  }, [messages]);
+
+  // Authoritative target ids: matched programs that actually resolve in the directory.
+  const programIds = useMemo(
+    () =>
+      (plan?.matches ?? [])
+        .map((m) => m.programId)
+        .filter((id) => Boolean(getProgramById(id))),
+    [plan],
+  );
+
+  // The person's original words, carried into the intake so it isn't re-asked.
+  const situation = useMemo(() => {
+    const firstUser = messages.find((m) => m.role === "user");
+    return firstUser ? textOf(firstUser.parts as PartLike[]) : "";
+  }, [messages]);
 
   // Auto-run Marisol's example when arriving from the landing CTA.
   useEffect(() => {
@@ -112,7 +136,9 @@ export default function AssessPage() {
             <div key={m.id} className="space-y-4">
               <ReasoningTrace parts={parts} />
               {note ? (
-                <p className="whitespace-pre-wrap text-fg print:hidden">{note}</p>
+                <div className="print:hidden">
+                  <Markdown>{note}</Markdown>
+                </div>
               ) : null}
               {planPart?.data ? (
                 <ActionPlanView plan={planPart.data as ActionPlan} />
@@ -128,49 +154,74 @@ export default function AssessPage() {
             Something went wrong reaching the assistant. Please try again.
           </p>
         ) : null}
+
+        {/* Packet flow — layered on top of the action plan, never replacing it. */}
+        {plan && packetPhase === "plan" && programIds.length > 0 ? (
+          <PreparePacketCTA
+            onStart={() => setPacketPhase("intake")}
+            disabled={busy}
+          />
+        ) : null}
+
+        {packetPhase === "intake" ? (
+          <IntakeChat
+            programIds={programIds}
+            situation={situation}
+            onPacket={(spec) => {
+              setPacketSpec(spec);
+              setPacketPhase("review");
+            }}
+          />
+        ) : null}
+
+        {packetPhase === "review" && packetSpec ? (
+          <PacketReview programIds={programIds} spec={packetSpec} />
+        ) : null}
       </div>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          submit(input);
-        }}
-        className="mt-6 print:hidden"
-      >
-        <Textarea
-          aria-label="Describe your situation"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-              e.preventDefault();
-              submit(input);
-            }
+      {packetPhase === "plan" ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            submit(input);
           }}
-          rows={started ? 2 : 5}
-          placeholder={
-            started
-              ? "Reply to Compass…"
-              : "For example: I live in Jersey City, my hours got cut, and I got an electricity shutoff notice…"
-          }
-          disabled={busy}
-        />
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <Button type="submit" disabled={busy || !input.trim()}>
-            {started ? "Send" : "Get my plan"}
-          </Button>
-          {!started ? (
-            <button
-              type="button"
-              onClick={() => submit(MARISOL_EXAMPLE)}
-              disabled={busy}
-              className="text-sm text-muted underline-offset-4 hover:text-fg hover:underline disabled:opacity-50"
-            >
-              Not sure where to start? Try Marisol&apos;s example.
-            </button>
-          ) : null}
-        </div>
-      </form>
+          className="mt-6 print:hidden"
+        >
+          <Textarea
+            aria-label="Describe your situation"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                submit(input);
+              }
+            }}
+            rows={started ? 2 : 5}
+            placeholder={
+              started
+                ? "Reply to Compass…"
+                : "For example: I live in Jersey City, my hours got cut, and I got an electricity shutoff notice…"
+            }
+            disabled={busy}
+          />
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <Button type="submit" disabled={busy || !input.trim()}>
+              {started ? "Send" : "Get my plan"}
+            </Button>
+            {!started ? (
+              <button
+                type="button"
+                onClick={() => submit(MARISOL_EXAMPLE)}
+                disabled={busy}
+                className="text-sm text-muted underline-offset-4 hover:text-fg hover:underline disabled:opacity-50"
+              >
+                Not sure where to start? Try Marisol&apos;s example.
+              </button>
+            ) : null}
+          </div>
+        </form>
+      ) : null}
     </div>
   );
 }

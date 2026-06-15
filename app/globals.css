@@ -127,3 +127,119 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Markdown rendering for assistant messages (no @tailwindcss/typography). */
+.compass-md {
+  line-height: 1.65;
+}
+.compass-md > * + * {
+  margin-top: 0.85rem;
+}
+.compass-md > :first-child {
+  margin-top: 0;
+}
+.compass-md h1,
+.compass-md h2,
+.compass-md h3,
+.compass-md h4 {
+  margin-top: 1.35rem;
+}
+.compass-md h1,
+.compass-md h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+.compass-md h3,
+.compass-md h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.compass-md ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.compass-md ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.compass-md li {
+  margin-top: 0.4rem;
+}
+.compass-md li > ul,
+.compass-md li > ol {
+  margin-top: 0.4rem;
+}
+.compass-md strong {
+  font-weight: 600;
+}
+.compass-md em {
+  font-style: italic;
+}
+.compass-md a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.compass-md code {
+  font-family: var(--font-mono);
+  background: var(--surface-2);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.compass-md pre {
+  background: var(--surface-2);
+  padding: 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+.compass-md pre code {
+  background: transparent;
+  padding: 0;
+}
+.compass-md hr {
+  margin: 1.2rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.compass-md blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Glimmering loading word. */
+@keyframes compass-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--text-subtle) 0%,
+    var(--text-subtle) 40%,
+    var(--text) 50%,
+    var(--text-subtle) 60%,
+    var(--text-subtle) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: compass-shimmer 1.6s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+    -webkit-text-fill-color: var(--text-muted);
+    color: var(--text-muted);
+  }
+}
