@@ -15,7 +15,7 @@ import { rateLimit } from "@/lib/rate-limit";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const DEFAULT_MODEL = "claude-opus-4-8";
+const DEFAULT_MODEL = "claude-sonnet-4-6";
 const MAX_BODY_CHARS = 24_000;
 
 const bodySchema = z.object({
