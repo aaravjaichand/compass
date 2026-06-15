@@ -18,7 +18,7 @@ export function SiteHeader() {
             Sign in
           </Link>
           <Link
-            href="/assess"
+            href="/try"
             className="rounded-md px-3 py-1.5 font-medium text-muted transition-colors duration-150 hover:bg-surface-2 hover:text-fg"
           >
             Start

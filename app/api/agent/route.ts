@@ -12,7 +12,6 @@ import { ALLOWED_TOOLS, DISALLOWED_TOOLS, compassServer } from "@/lib/agent/tool
 import { buildPrompt, todayInET } from "@/lib/agent/stream";
 import { runAgent } from "@/lib/agent/runtime";
 import { rateLimit } from "@/lib/rate-limit";
-import { getCurrentUser } from "@/lib/auth/server";
 
 export const runtime = "nodejs";
 // The agent runs in a Vercel Sandbox (install + multi-turn reasoning), which
@@ -35,10 +34,9 @@ export async function POST(req: Request) {
     });
   }
 
-  const user = await getCurrentUser();
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+  // No auth gate: the public `/try` demo calls this endpoint as a guest. The
+  // agent reads only the bundled directory and never touches user data, so an
+  // unauthenticated run is safe; abuse is bounded by the IP rate-limit above.
 
   if (!process.env.CLAUDE_CODE_OAUTH_TOKEN && !process.env.ANTHROPIC_API_KEY) {
     return new Response(

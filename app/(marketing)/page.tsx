@@ -60,10 +60,10 @@ export default function Home() {
             grounded packet of the right programs, forms, and documents.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link href="/assess">
+            <Link href="/try">
               <Button>Describe your situation</Button>
             </Link>
-            <Link href="/assess?example=marisol">
+            <Link href="/try?example=marisol">
               <Button variant="secondary">See Marisol&apos;s example</Button>
             </Link>
           </div>
