@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/cn";
 
 const NAV = [
@@ -28,6 +29,11 @@ export function FloatingNav() {
       className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 print:hidden"
     >
       <div className="group flex items-center gap-1 rounded-full border border-border bg-surface/90 p-1.5 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.35)] backdrop-blur-md">
+        {/* Brand mark — always visible, not part of the hover expansion. */}
+        <span className="flex items-center pr-0.5 pl-2 text-fg">
+          <Logo className="size-5 shrink-0" />
+        </span>
+        <span className="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden="true" />
         {NAV.map((item) => {
           const active =
             pathname === item.href || pathname.startsWith(`${item.href}/`);
