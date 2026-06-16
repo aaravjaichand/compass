@@ -62,7 +62,7 @@ export default async function PlanDetailPage({
         <p className="mt-1 text-sm text-muted">
           Track where you are with each program.{" "}
           <span className="text-subtle">
-            Compass does not contact agencies or track your applications — this
+            Compass does not contact agencies or track your applications. This
             is what you record for yourself.
           </span>
         </p>

@@ -1,7 +1,7 @@
 import type { ActionPlan } from "@/lib/agent/schema";
 
 /**
- * A static, pre-generated action plan for Marisol — shown read-only on the
+ * A static, pre-generated action plan for Marisol, shown read-only on the
  * public landing so a visitor sees the real output shape before signing in.
  * The program ids match real records in lib/directory/programs.json so the
  * ActionPlanView resolves and renders them fully.
@@ -13,7 +13,7 @@ export const MARISOL_SAMPLE_PLAN: ActionPlan = {
     {
       programId: "nj-liheap-usf",
       matchReason:
-        "You have an active electricity shutoff notice and reduced income — LIHEAP and the Universal Service Fund help cover overdue energy bills for households in exactly this situation.",
+        "You have an active electricity shutoff notice and reduced income. LIHEAP and the Universal Service Fund help cover overdue energy bills for households in exactly this situation.",
       confidence: "high",
       eligibility:
         "You likely qualify: NJ residency plus income within program limits for a household of three. Bring your shutoff notice and a recent pay stub to confirm.",
@@ -21,7 +21,7 @@ export const MARISOL_SAMPLE_PLAN: ActionPlan = {
     {
       programId: "hudson-bsds-snap",
       matchReason:
-        "A drop in income with children at home and an empty fridge is the core case SNAP is built for — it provides monthly funds for groceries.",
+        "A drop in income with children at home and an empty fridge is the core case SNAP is built for. It provides monthly funds for groceries.",
       confidence: "high",
       eligibility:
         "You likely qualify based on a household of three and reduced earnings, though the county office makes the final determination.",
@@ -32,7 +32,7 @@ export const MARISOL_SAMPLE_PLAN: ActionPlan = {
         "WIC supports nutrition for young children and pregnant or postpartum parents; your children may fall within the eligible age range.",
       confidence: "medium",
       eligibility:
-        "You may qualify if a child is under five — confirm each child's age and bring proof of income.",
+        "You may qualify if a child is under five. Confirm each child's age and bring proof of income.",
     },
     {
       programId: "triangle-park-pantry",
@@ -40,7 +40,7 @@ export const MARISOL_SAMPLE_PLAN: ActionPlan = {
         "For food you need this week, a local pantry bridges the gap while SNAP and WIC applications are processed.",
       confidence: "high",
       eligibility:
-        "No formal eligibility — pantries serve anyone in need. Call ahead for hours and what to bring.",
+        "No formal eligibility. Pantries serve anyone in need. Call ahead for hours and what to bring.",
     },
   ],
   checklist: [
