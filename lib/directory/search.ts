@@ -6,8 +6,9 @@ import type {
 } from "./types";
 
 /**
- * Bundled, read-only directory. Cast once here; the JSON is the data seam
- * (synthetic today, real 211 records later) and is validated by tests.
+ * Bundled, read-only directory: real, sourced Hudson/Bergen 211 program records
+ * (programs.json, each cited and marked isSynthetic: false). Cast once here; the
+ * JSON is the data seam and is validated by tests.
  */
 export const ALL_PROGRAMS = programsData as unknown as ProgramRecord[];
 
