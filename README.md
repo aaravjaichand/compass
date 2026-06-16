@@ -1,36 +1,37 @@
 # Compass
 
-**Describe your situation in plain language. Get a clear, ready-to-file path to local aid.**
+Describe your situation in plain words. Get back a clear, ready-to-file path to local aid.
 
-Marisol, a parent in Jersey City, just got an electricity shutoff notice. Her hours were cut, the fridge is nearly empty, and two kids are at home. Help exists — utility relief, food assistance, WIC — but it is scattered across agencies, buried in eligibility rules, and written for people who are not in a crisis. By the time she finds the right office, the lights may already be off.
+Marisol is a parent in Jersey City. Her hours just got cut, an electricity shutoff notice showed up in the mail, the fridge is nearly empty, and two kids are home. Help for exactly this exists: utility relief, SNAP, WIC, a food pantry a few blocks away. The hard part is finding it. It is split across agencies, buried in eligibility rules, and written for people who aren't already panicking. By the time she tracks down the right office, the lights might be off.
 
-Compass is an agentic web assistant that turns a situation like Marisol's into a personalized, ready-to-act packet of local assistance programs — the right offices, forms, and documents — grounded in a real local resource directory, with a human in control of every irreversible step.
+Compass is built for the Marisols. You tell it what's going on, in English or Spanish, and it does the legwork: it works out which local programs fit, checks whether you roughly qualify, and hands back one packet with the offices, forms, and documents you need. A person stays in charge of anything that can't be undone.
 
-> Compass prepares; **you decide and file**. It is not an official benefits determination and never submits anything to an agency on your behalf.
+> Compass prepares. You decide and file. It never submits an application for you, and it is not an official benefits decision.
 
 ## How it works
 
-You describe your situation, typed or spoken. From there, Compass runs four steps:
+You type or speak your situation. Then four steps:
 
-1. **Understand & plan.** An LLM-driven agent interprets the plain-language description and plans which lookups it needs — it does not just keyword-match.
-2. **Search & match.** It queries a real Hudson/Bergen resource directory for the programs that fit, and runs a short guided Q&A to check rough eligibility.
-3. **Explain & assemble.** Each match comes with why it fit, a confidence level, the documents required, locations and hours, and a drafted cover email.
-4. **You act.** Compass hands you a packet you can act on today. Nothing is sent until you approve.
+1. Understand. An agent reads what you wrote and plans what to look up, reasoning about your situation rather than matching keywords.
+2. Match. It searches a real Hudson and Bergen County aid directory, then asks a couple of quick questions to gauge rough eligibility.
+3. Explain. Each match comes with why it fits, how confident that guess is, the documents to bring, where to go, and a drafted cover email.
+4. Act. You get a packet you can use the same day. Nothing leaves your hands until you send it.
 
 ## Why an agent, not a search box
 
-A web search returns ten links and leaves the work to you — figuring out which programs apply, whether you qualify, and what each one needs. Compass does that reasoning: it plans the lookups, matches against a real directory, checks rough eligibility, and assembles the paperwork into one packet — turning scattered information into a single clear next action.
+A search hands you ten links and keeps the hard part for you: which programs apply, whether you qualify, what each one wants. Compass does that part. It plans the lookups, checks a real directory, weighs eligibility, and turns the scatter into one next step.
 
-## Responsible AI
+## Where we drew the line (responsible AI)
 
-- **The risk we take seriously:** an automated eligibility guess can be wrong, and a stressed user may over-rely on it.
-- **How we reduce it:** every match shows its eligibility reasoning, its source in the directory, and a confidence level — so nothing is taken on faith.
-- **The human stays in control:** Compass never submits an application. It prepares; a person reviews, decides, and files. Low-confidence cases, anything involving a minor's benefits, and cross-agency conflicts are flagged for a human, and a crisis hotline surfaces immediately for emergencies.
+An eligibility guess can be wrong, and someone mid-crisis is likely to trust it more than they should. That bothered us, so we built around it:
+
+- Every match shows its reasoning, its source in the directory, and a confidence level. Nothing asks to be taken on faith.
+- Compass never files anything. It prepares; you review and decide. Uncertain matches, anything tied to a child's benefits, and overlapping agencies are flagged for a human, and a crisis hotline surfaces right away in an emergency.
 
 ## Disclaimer
 
-Compass provides informational guidance only. It does not make official eligibility determinations and does not submit applications. Always confirm with the relevant office. In an emergency, contact your local crisis hotline or emergency services.
+Compass gives informational guidance only. It does not make official eligibility decisions and does not submit applications. Always confirm with the relevant office. In an emergency, call your local crisis line or 911.
 
 ---
 
-*Built for USAII's Global AI Hackathon 2026 — High School Track, Challenge 1: Help is Hard to Find.*
+Built for USAII's Global AI Hackathon 2026. High School Track, Challenge 1: Help is Hard to Find.
