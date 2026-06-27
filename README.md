@@ -31,7 +31,3 @@ An eligibility guess can be wrong, and someone mid-crisis is likely to trust it 
 ## Disclaimer
 
 Compass gives informational guidance only. It does not make official eligibility decisions and does not submit applications. Always confirm with the relevant office. In an emergency, call your local crisis line or 911.
-
----
-
-Built for USAII's Global AI Hackathon 2026. High School Track, Challenge 1: Help is Hard to Find.
